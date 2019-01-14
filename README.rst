@@ -45,8 +45,11 @@ a file-like object, the time series is read from it using the
 
 **.data**
 
-A pandas time series or dataframe indexed by datetime. This contains the
-data of the time series.
+A pandas dataframe indexed by datetime. This contains the data of the time
+series.
+
+In theory, this should be a dataframe with two columns (besides date): value
+and flags. However, in this version, ``HTimeseries`` does not enforce that.
 
 classmethod **.read(f, format=HTimeseries.TEXT, start_date=None, end_date=None)**
 
