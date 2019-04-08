@@ -319,8 +319,12 @@ class HTimeseries:
         self.data = data
 
     @classmethod
-    def read(cls, f, format=TEXT, start_date=None, end_date=None):
+    def read(cls, f, format=None, start_date=None, end_date=None):
         result = cls()
+
+        # Auto detect format if needed
+        if format is None:
+            format = result._auto_detect_format(f)
 
         # If file format, get the metadata
         if format == cls.FILE:
@@ -355,6 +359,25 @@ class HTimeseries:
 
         result.data = data
         return result
+
+    def _auto_detect_format(self, f):
+        original_position = f.tell()
+        result = self._auto_detect_format_without_restoring_file_position(f)
+        f.seek(original_position)
+        return result
+
+    def _auto_detect_format_without_restoring_file_position(self, f):
+        line = self._get_first_nonempty_line(f)
+        if line and not line[0].isdigit():
+            return self.FILE
+        else:
+            return self.TEXT
+
+    def _get_first_nonempty_line(self, f):
+        for line in f:
+            if line.strip():
+                return line
+        return ""
 
     def write(self, f, format=TEXT, version=4):
         if format == self.FILE:

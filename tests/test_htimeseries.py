@@ -484,7 +484,7 @@ class HTimeseriesReadFileFormatTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries_file_version_4)
         s.seek(0)
-        self.ts = HTimeseries.read(s, format=HTimeseries.FILE)
+        self.ts = HTimeseries.read(s)
 
     def test_unit(self):
         self.assertEqual(self.ts.unit, "°C")
@@ -555,4 +555,20 @@ class HTimeseriesReadFileFormatTestCase(TestCase):
     def test_flags(self):
         np.testing.assert_array_equal(
             self.ts.data.values[:, 1], np.array(["", "MISS", "", "", ""])
+        )
+
+
+class HTimeseriesAutoDetectFormatTestCase(TestCase):
+    def test_auto_detect_text_format(self):
+        self.assertEqual(
+            HTimeseries()._auto_detect_format(StringIO(tenmin_test_timeseries)),
+            HTimeseries.TEXT,
+        )
+
+    def test_auto_detect_file_format(self):
+        self.assertEqual(
+            HTimeseries()._auto_detect_format(
+                StringIO(tenmin_test_timeseries_file_version_4)
+            ),
+            HTimeseries.FILE,
         )
