@@ -94,6 +94,9 @@ CR-CR-LF. If ``f`` is a file, it should have been opened in binary mode.
 
 ``version`` is ignored unless ``format=HTimeseries.FILE``.
 
+While writing, the value of the ``precision`` attribute is taken into
+account.
+
 Formats
 =======
 
