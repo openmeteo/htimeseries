@@ -51,7 +51,7 @@ series.
 In theory, this should be a dataframe with two columns (besides date): value
 and flags. However, in this version, ``HTimeseries`` does not enforce that.
 
-classmethod **.read(f, format=HTimeseries.TEXT, start_date=None, end_date=None)**
+**classmethod .read(f, format=None, start_date=None, end_date=None)**
 
 Reads filelike object ``f`` that contains a time series and returns a
 ``HTimeseries`` object. There must be no newline translation in ``f``
@@ -59,11 +59,11 @@ Reads filelike object ``f`` that contains a time series and returns a
 ``end_date`` are specified, it skips rows outside the range.
 
 The contents of ``f`` can be in text format or file format (see
-"formats" below). This is specified by the ``format`` parameter.  If
-reading in text format (``format=HTimeseries.TEXT``), the returned
-object just has the ``data`` attribute set. If reading in file format
-(``format=HTimeseries.FILE``), the returned object also has attributes
-``unit``, ``title``, ``comment``, ``time_zone``, ``time_step``,
+"formats" below). This usually auto-detected, but a specific format can
+be specified with the ``format`` parameter.  If reading in text format,
+the returned object just has the ``data`` attribute set. If reading in
+file format , the returned object also has attributes ``unit``,
+``title``, ``comment``, ``time_zone``, ``time_step``,
 ``timestamp_rounding``, ``timestamp_offset``, ``interval_type``,
 ``variable``, ``precision`` and ``location``. For the meaning of these
 attributes, see section "File format" below.
