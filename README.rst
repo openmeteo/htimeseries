@@ -63,7 +63,7 @@ The contents of ``f`` can be in text format or file format (see
 be specified with the ``format`` parameter.  If reading in text format,
 the returned object just has the ``data`` attribute set. If reading in
 file format , the returned object also has attributes ``unit``,
-``title``, ``comment``, ``time_zone``, ``time_step``,
+``title``, ``comment``, ``timezone``, ``time_step``,
 ``timestamp_rounding``, ``timestamp_offset``, ``interval_type``,
 ``variable``, ``precision`` and ``location``. For the meaning of these
 attributes, see section "File format" below.
@@ -86,7 +86,7 @@ The ``location`` attribute is a dictionary that has items ``abscissa``,
 **.write(f, format=HTimeseries.TEXT, version=4)**
 
 Writes the time series to filelike object ``f``. In accordance with the
-:ref:`text format specification <textformat>`, time series are written
+formats described below, time series are written
 using the CR-LF sequence to terminate lines.  Care should be taken that
 ``f``, or any subsequent operations on ``f``, do not perform text
 translation; otherwise it may result in lines being terminated with
