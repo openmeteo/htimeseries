@@ -1,6 +1,6 @@
 import datetime as dt
 from configparser import ParsingError
-from io import SEEK_CUR, SEEK_END, SEEK_SET, UnsupportedOperation
+from io import SEEK_CUR, SEEK_END, SEEK_SET, StringIO, UnsupportedOperation
 
 import numpy as np
 import pandas as pd
@@ -315,7 +315,7 @@ class HTimeseries:
 
     def __init__(self, data=None, **kwargs):
         if data is None:
-            self.data = pd.DataFrame(columns=("value", "flags"))
+            self._read_filelike(StringIO())
         elif isinstance(data, pd.DataFrame):
             self.data = data
         else:

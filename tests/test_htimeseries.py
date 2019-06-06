@@ -231,18 +231,28 @@ tenmin_test_timeseries_file_negative_precision = textwrap.dedent(
     """
 )
 
+standard_empty_dataframe = pd.DataFrame(
+    data={"value": np.array([], dtype=np.float64), "flags": np.array([], dtype=str)},
+    index=[],
+    columns=["value", "flags"],
+)
+standard_empty_dataframe.index.name = "date"
+
 
 class HTimeseriesEmptyTestCase(TestCase):
     def test_read_empty(self):
         s = StringIO()
         ts = HTimeseries(s)
-        self.assertEqual(len(ts.data), 0)
+        pd.testing.assert_frame_equal(ts.data, standard_empty_dataframe)
 
     def test_write_empty(self):
         ts = HTimeseries()
         s = StringIO()
         ts.write(s)
         self.assertEqual(s.getvalue(), "")
+
+    def test_create_empty(self):
+        pd.testing.assert_frame_equal(HTimeseries().data, standard_empty_dataframe)
 
 
 class HTimeseriesWriteSimpleTestCase(TestCase):
@@ -410,12 +420,7 @@ class HTimeseriesReadFilelikeMetadataOnlyTestCase(TestCase):
         )
 
     def test_data_is_empty(self):
-        expected = pd.DataFrame(
-            data={"value": [], "flags": []}, index=[], columns=["value", "flags"]
-        )
-        expected.index.name = "date"
-        expected = expected.astype({"value": np.float64, "flags": str})
-        pd.testing.assert_frame_equal(self.ts.data, expected)
+        pd.testing.assert_frame_equal(self.ts.data, standard_empty_dataframe)
 
     def test_metadata_was_read(self):
         self.assertEqual(self.ts.unit, "°C")
