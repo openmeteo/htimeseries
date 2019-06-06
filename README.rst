@@ -214,8 +214,8 @@ The parameters available are:
     example above.
 
 **Timezone**
-    The time zone of the timestamps, in the format :samp:`{XXX}
-    (UTC{+HHmm})`, where *XXX* is a time zone name and *+HHmm* is the
+    The time zone of the timestamps, in the format ``{XXX}
+    (UTC{+HHmm})``, where *XXX* is a time zone name and *+HHmm* is the
     offset from UTC. Examples are ``EET (UTC+0200)`` and ``VST
     (UTC-0430)``.
 
