@@ -401,6 +401,26 @@ class HTimeseriesReadFilelikeTestCase(TestCase):
         np.testing.assert_array_equal(self.ts.data.values[:, 1], expected)
 
 
+class HTimeseriesReadFilelikeMetadataOnlyTestCase(TestCase):
+    def setUp(self):
+        s = StringIO(tenmin_test_timeseries_file_version_4)
+        s.seek(0)
+        self.ts = HTimeseries(
+            s, start_date="1971-01-01 00:00", end_date="1970-01-01 00:00"
+        )
+
+    def test_data_is_empty(self):
+        expected = pd.DataFrame(
+            data={"value": [], "flags": []}, index=[], columns=["value", "flags"]
+        )
+        expected.index.name = "date"
+        expected = expected.astype({"value": np.float64, "flags": str})
+        pd.testing.assert_frame_equal(self.ts.data, expected)
+
+    def test_metadata_was_read(self):
+        self.assertEqual(self.ts.unit, "°C")
+
+
 class HTimeseriesReadWithStartDateAndEndDateTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries)
