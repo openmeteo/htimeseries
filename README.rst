@@ -35,30 +35,23 @@ There are also several utility methods described below.
 Reference
 =========
 
-**HTimeseries(data=None)**
+**HTimeseries(data=None, format=None, start_date=None, end_date=None)**
 
 Creates a ``HTimeseries`` object. ``data`` can be a pandas time series
 or dataframe indexed by datetime or a file-like object. If it is a
-pandas object, it becomes the value of the ``data`` attribute. If it is
-a file-like object, the time series is read from it using the
-``.read()`` method.
+pandas object, it becomes the value of the ``data`` attribute and the
+rest of the keyword arguments are ignored.
 
-**.data**
+The ``data`` attribute should be a dataframe with two columns (besides
+date): value and flags. However, in this version, ``HTimeseries`` does
+not enforce that.
 
-A pandas dataframe indexed by datetime. This contains the data of the time
-series.
+If the ``data`` argument is a filelike object, the time series is read
+from it.  There must be no newline translation in ``data`` (open it with
+``open(..., newline='\n')``. If ``start_date`` and ``end_date`` are
+specified, it skips rows outside the range.
 
-In theory, this should be a dataframe with two columns (besides date): value
-and flags. However, in this version, ``HTimeseries`` does not enforce that.
-
-**classmethod .read(f, format=None, start_date=None, end_date=None)**
-
-Reads filelike object ``f`` that contains a time series and returns a
-``HTimeseries`` object. There must be no newline translation in ``f``
-(open it with ``open(..., newline='\n')``. If ``start_date`` and
-``end_date`` are specified, it skips rows outside the range.
-
-The contents of ``f`` can be in text format or file format (see
+The contents of the filelike object can be in text format or file format (see
 "formats" below). This usually auto-detected, but a specific format can
 be specified with the ``format`` parameter.  If reading in text format,
 the returned object just has the ``data`` attribute set. If reading in

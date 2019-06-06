@@ -313,22 +313,22 @@ class HTimeseries:
     TEXT = "TEXT"
     FILE = "FILE"
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, **kwargs):
         if data is None:
-            data = pd.DataFrame(columns=("value", "flags"))
-        self.data = data
+            self.data = pd.DataFrame(columns=("value", "flags"))
+        elif isinstance(data, pd.DataFrame):
+            self.data = data
+        else:
+            self._read_filelike(data, **kwargs)
 
-    @classmethod
-    def read(cls, f, format=None, start_date=None, end_date=None):
-        result = cls()
-
+    def _read_filelike(self, f, format=None, start_date=None, end_date=None):
         # Auto detect format if needed
         if format is None:
-            format = result._auto_detect_format(f)
+            format = self._auto_detect_format(f)
 
         # If file format, get the metadata
-        if format == cls.FILE:
-            result.__dict__.update(_MetadataReader(f).meta)
+        if format == self.FILE:
+            self.__dict__.update(_MetadataReader(f).meta)
 
         # Determine start_date and end_date as ISO8601 strings
         start_date = "0001-01-01 00:00" if start_date is None else start_date
@@ -346,7 +346,7 @@ class HTimeseries:
         f2 = _FilePart(f, startpos, endpos)
 
         # Read it
-        data = pd.read_csv(
+        self.data = pd.read_csv(
             f2,
             parse_dates=[0],
             names=("date", "value", "flags"),
@@ -356,9 +356,6 @@ class HTimeseries:
             converters={"flags": lambda x: x},
             dtype={"value": np.float64},
         )
-
-        result.data = data
-        return result
 
     def _auto_detect_format(self, f):
         original_position = f.tell()

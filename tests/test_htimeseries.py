@@ -235,7 +235,7 @@ tenmin_test_timeseries_file_negative_precision = textwrap.dedent(
 class HTimeseriesEmptyTestCase(TestCase):
     def test_read_empty(self):
         s = StringIO()
-        ts = HTimeseries.read(s)
+        ts = HTimeseries(s)
         self.assertEqual(len(ts.data), 0)
 
     def test_write_empty(self):
@@ -376,11 +376,11 @@ class HTimeseriesWriteFileTestCase(TestCase):
         )
 
 
-class HTimeseriesReadTestCase(TestCase):
+class HTimeseriesReadFilelikeTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries)
         s.seek(0)
-        self.ts = HTimeseries.read(s)
+        self.ts = HTimeseries(s)
 
     def test_length(self):
         self.assertEqual(len(self.ts.data), 5)
@@ -405,7 +405,7 @@ class HTimeseriesReadWithStartDateAndEndDateTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries)
         s.seek(0)
-        self.ts = HTimeseries.read(
+        self.ts = HTimeseries(
             s,
             start_date=dt.datetime(2008, 2, 7, 11, 30),
             end_date=dt.datetime(2008, 2, 7, 11, 55),
@@ -435,7 +435,7 @@ class HTimeseriesReadWithStartDateTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries)
         s.seek(0)
-        self.ts = HTimeseries.read(s, start_date=dt.datetime(2008, 2, 7, 11, 45))
+        self.ts = HTimeseries(s, start_date=dt.datetime(2008, 2, 7, 11, 45))
 
     def test_length(self):
         self.assertEqual(len(self.ts.data), 2)
@@ -458,7 +458,7 @@ class HTimeseriesReadWithEndDateTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries)
         s.seek(0)
-        self.ts = HTimeseries.read(s, end_date=dt.datetime(2008, 2, 7, 11, 50))
+        self.ts = HTimeseries(s, end_date=dt.datetime(2008, 2, 7, 11, 50))
 
     def test_length(self):
         self.assertEqual(len(self.ts.data), 4)
@@ -484,7 +484,7 @@ class HTimeseriesReadFileFormatTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries_file_version_4)
         s.seek(0)
-        self.ts = HTimeseries.read(s)
+        self.ts = HTimeseries(s)
 
     def test_unit(self):
         self.assertEqual(self.ts.unit, "°C")
