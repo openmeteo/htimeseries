@@ -2,6 +2,15 @@
 History
 =======
 
+1.0.0 (2019-06-06)
+------------------
+
+- API change: .read() is gone, now we use a single overloaded
+  constructor; either HTimeseries() or HTimeseries(dataframe) or 
+  HTimeseries(filelike).
+- The columns and dtypes of .data are now standardized and properly
+  created even for empty objects (created with HTimeseries()).
+
 0.2.0 (2019-04-09)
 ------------------
 
