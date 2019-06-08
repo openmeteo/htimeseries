@@ -24,6 +24,7 @@ Introduction
 ============
 
 ::
+    from htimeseries import HTimeseries
 
     ts = HTimeseries()
 
@@ -32,8 +33,8 @@ pandas time series or dataframe with a datetime index. Besides ``data``,
 it can have other attributes which serve as the time series' metadata.
 There are also several utility methods described below.
 
-Reference
-=========
+HTimeseries objects
+===================
 
 **HTimeseries(data=None, format=None, start_date=None, end_date=None)**
 
@@ -92,6 +93,22 @@ CR-CR-LF. If ``f`` is a file, it should have been opened in binary mode.
 
 While writing, the value of the ``precision`` attribute is taken into
 account.
+
+TzinfoFromString objects
+========================
+
+::
+    from htimeseries imort TzinfoFromString
+
+    atzinfo = TzinfoFromString("EET (UTC+0200)")
+
+``TzinfoFromString`` is a utility that creates and returns a tzinfo_
+object from a string formatted as "+0000" or as "XXX (+0000)" or as "XXX
+(UTC+0000)" (``TzinfoFromString`` is actually a tzinfo_ subclass). Its
+purpose is to read the contents of the ``timezone`` parameter of the
+file format (described below).
+
+.. _tzinfo: https://docs.python.org/3/library/datetime.html#tzinfo-objects
 
 Formats
 =======
@@ -218,6 +235,9 @@ The parameters available are:
     (UTC{+HHmm})``, where *XXX* is a time zone name and *+HHmm* is the
     offset from UTC. Examples are ``EET (UTC+0200)`` and ``VST
     (UTC-0430)``.
+
+    The ``TzinfoFromString`` utility (described above) can be used to
+    convert this string to a tzinfo_ object.
 
 **Time_step**
     A comma-separated pair of integers; the number of minutes and months
