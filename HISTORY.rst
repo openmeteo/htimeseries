@@ -2,6 +2,11 @@
 History
 =======
 
+1.1.0 (2019-06-08)
+==================
+
+- Added TzinfoFromString utility (moved in here from pthelma).
+
 1.0.1 (2019-06-06)
 ==================
 
