@@ -583,6 +583,22 @@ class HTimeseriesReadFileFormatTestCase(TestCase):
         )
 
 
+class HTimeseriesReadTimestampRoundingNoneTestCase(TestCase):
+    def setUp(self):
+        str1 = tenmin_test_timeseries_file_version_4.replace(
+            "Timestamp_rounding=0,0", "Timestamp_rounding=None"
+        ).replace("Timestamp_offset=0,0", "Timestamp_offset=None")
+        s = StringIO(str1)
+        s.seek(0)
+        self.ts = HTimeseries(s)
+
+    def test_timestamp_rounding(self):
+        self.assertIsNone(self.ts.timestamp_rounding)
+
+    def test_timestamp_offset(self):
+        self.assertIsNone(self.ts.timestamp_offset)
+
+
 class HTimeseriesAutoDetectFormatTestCase(TestCase):
     def test_auto_detect_text_format(self):
         self.assertEqual(

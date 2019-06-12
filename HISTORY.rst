@@ -2,6 +2,11 @@
 History
 =======
 
+1.1.1 (2019-06-12)
+==================
+
+- Fixed crash when Timestamp_rounding=None or Timestamp_offset=None.
+
 1.1.0 (2019-06-08)
 ==================
 
