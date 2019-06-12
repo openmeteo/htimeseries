@@ -233,6 +233,9 @@ class _MetadataReader:
     get_variable = get_unit
 
     def get_time_step(self, name, value):
+        if value == "None":
+            self.meta[name] = None
+            return
         minutes, months = self.read_minutes_months(value)
         self.meta[name] = "{},{}".format(minutes, months)
 
