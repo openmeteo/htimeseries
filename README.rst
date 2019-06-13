@@ -24,6 +24,7 @@ Introduction
 ============
 
 ::
+
     from htimeseries import HTimeseries
 
     ts = HTimeseries()
@@ -98,6 +99,7 @@ TzinfoFromString objects
 ========================
 
 ::
+
     from htimeseries imort TzinfoFromString
 
     atzinfo = TzinfoFromString("EET (UTC+0200)")
