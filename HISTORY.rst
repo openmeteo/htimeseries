@@ -2,6 +2,13 @@
 History
 =======
 
+1.1.2 (2019-07-18)
+==================
+
+- Fixed some altitude-related bugs: 1) It would crash when trying to
+  read a file that specified altitude but not location; 2) it wouldn't
+  write altitude to the file it the altitude was zero.
+
 1.1.1 (2019-06-12)
 ==================
 
