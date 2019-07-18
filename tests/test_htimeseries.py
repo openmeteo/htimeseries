@@ -426,6 +426,21 @@ class HTimeseriesReadFilelikeMetadataOnlyTestCase(TestCase):
         self.assertEqual(self.ts.unit, "°C")
 
 
+class HTimeseriesReadFilelikeWithMissingLocationButPresentAltitudeTestCase(TestCase):
+    def setUp(self):
+        s = StringIO("Altitude=55\n\n")
+        self.ts = HTimeseries(s)
+
+    def test_data_is_empty(self):
+        pd.testing.assert_frame_equal(self.ts.data, standard_empty_dataframe)
+
+    def test_has_altitude(self):
+        self.assertEqual(self.ts.location["altitude"], 55)
+
+    def test_has_no_abscissa(self):
+        self.assertFalse("abscissa" in self.ts.location)
+
+
 class HTimeseriesReadWithStartDateAndEndDateTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries)
