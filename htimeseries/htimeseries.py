@@ -167,8 +167,7 @@ class _MetadataWriter:
         no_altitude = (
             (self.version <= 2)
             or not getattr(self.htimeseries, "location", None)
-            or ("altitude" not in self.htimeseries.location)
-            or (not self.htimeseries.location["altitude"])
+            or (self.htimeseries.location.get("altitude") is None)
         )
         if no_altitude:
             return
@@ -262,8 +261,7 @@ class _MetadataReader:
         self.meta["comment"] += value
 
     def get_location(self, name, value):
-        if "location" not in self.meta:
-            self.meta["location"] = {}
+        self._ensure_location_attribute_exists()
         try:
             items = value.split()
             self.meta["location"]["abscissa"] = float(items[0])
@@ -272,9 +270,12 @@ class _MetadataReader:
         except (IndexError, ValueError):
             raise ParsingError("Invalid location")
 
-    def get_altitude(self, name, value):
+    def _ensure_location_attribute_exists(self):
         if "location" not in self.meta:
-            self.meta["location"] = ""
+            self.meta["location"] = {}
+
+    def get_altitude(self, name, value):
+        self._ensure_location_attribute_exists()
         try:
             items = value.split()
             self.meta["location"]["altitude"] = float(items[0])
