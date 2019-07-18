@@ -345,6 +345,12 @@ class HTimeseriesWriteFileTestCase(TestCase):
         self.reference_ts.write(outstring, format=HTimeseries.FILE, version=4)
         self.assertEqual(outstring.getvalue(), tenmin_test_timeseries_file_no_altitude)
 
+    def test_altitude_zero(self):
+        self.reference_ts.location["altitude"] = 0
+        outstring = StringIO()
+        self.reference_ts.write(outstring, format=HTimeseries.FILE, version=4)
+        self.assertIn("Altitude=0", outstring.getvalue())
+
     def test_location_none(self):
         self.reference_ts.location = None
         outstring = StringIO()

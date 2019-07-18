@@ -167,8 +167,7 @@ class _MetadataWriter:
         no_altitude = (
             (self.version <= 2)
             or not getattr(self.htimeseries, "location", None)
-            or ("altitude" not in self.htimeseries.location)
-            or (not self.htimeseries.location["altitude"])
+            or (self.htimeseries.location.get("altitude") is None)
         )
         if no_altitude:
             return
