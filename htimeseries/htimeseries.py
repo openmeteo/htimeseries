@@ -4,6 +4,7 @@ from io import SEEK_CUR, SEEK_END, SEEK_SET, StringIO, UnsupportedOperation
 
 import numpy as np
 import pandas as pd
+from pandas.tseries.frequencies import to_offset
 from textbisect import text_bisect_left, text_bisect_right
 
 
@@ -93,8 +94,8 @@ class _FilePart(object):
         return getattr(self.stream, name)
 
 
-class _MetadataWriter:
-    def __init__(self, f, htimeseries, version=4):
+class MetadataWriter:
+    def __init__(self, f, htimeseries, version=5):
         self.version = version
         self.htimeseries = htimeseries
         self.f = f
@@ -107,9 +108,7 @@ class _MetadataWriter:
         self.write_simple("title")
         self.write_comment()
         self.write_simple("timezone")
-        self.write_simple("time_step")
-        self.write_timestamp_rounding()
-        self.write_timestamp_offset()
+        self.write_time_step()
         self.write_simple("interval_type")
         self.write_simple("variable")
         self.write_simple("precision")
@@ -128,28 +127,6 @@ class _MetadataWriter:
         if hasattr(self.htimeseries, "comment"):
             for line in self.htimeseries.comment.splitlines():
                 self.f.write("Comment={}\r\n".format(line))
-
-    def write_timestamp_rounding(self):
-        timestamp_rounding_name = (
-            self.version >= 4 and "Timestamp_rounding" or "Nominal_offset"
-        )
-        if hasattr(self.htimeseries, "timestamp_rounding"):
-            self.f.write(
-                "{}={}\r\n".format(
-                    timestamp_rounding_name, self.htimeseries.timestamp_rounding
-                )
-            )
-
-    def write_timestamp_offset(self):
-        timestamp_offset_name = (
-            self.version >= 4 and "Timestamp_offset" or "Actual_offset"
-        )
-        if hasattr(self.htimeseries, "timestamp_offset"):
-            self.f.write(
-                "{}={}\r\n".format(
-                    timestamp_offset_name, self.htimeseries.timestamp_offset
-                )
-            )
 
     def write_location(self):
         if self.version <= 2 or not getattr(self.htimeseries, "location", None):
@@ -184,8 +161,39 @@ class _MetadataWriter:
         )
         self.f.write(fmt.format(altitude=altitude, asrid=asrid))
 
+    def write_time_step(self):
+        if self.version >= 5:
+            self.f.write("Time_step={}\r\n".format(self.htimeseries.time_step))
+        else:
+            self._write_old_time_step()
 
-class _MetadataReader:
+    def _write_old_time_step(self):
+        try:
+            old_time_step = self._get_old_time_step_in_minutes()
+        except ValueError:
+            old_time_step = self._get_old_time_step_in_months()
+        self.f.write("Time_step={}\r\n".format(old_time_step))
+
+    def _get_old_time_step_in_minutes(self):
+        td = pd.to_timedelta(to_offset(self.htimeseries.time_step))
+        return str(int(td.total_seconds() / 60)) + ",0"
+
+    def _get_old_time_step_in_months(self):
+        try:
+            unit = self.htimeseries.time_step[-1]
+            value = self.htimeseries.time_step[:-1]
+            if unit == "M":
+                return "0," + str(int(value))
+            elif unit in ("A", "Y"):
+                return "0," + str(12 * int(value))
+        except (IndexError, ValueError):
+            pass
+        raise ValueError(
+            'Cannot format time step "{}"'.format(self.htimeseries.time_step)
+        )
+
+
+class MetadataReader:
     def __init__(self, f):
         f = _BacktrackableFile(f)
 
@@ -211,8 +219,6 @@ class _MetadataReader:
         try:
             (name, value) = self.read_meta_line(f)
             while name:
-                name = name == "nominal_offset" and "timestamp_rounding" or name
-                name = name == "actual_offset" and "timestamp_offset" or name
                 method_name = "get_{}".format(name)
                 if hasattr(self, method_name):
                     method = getattr(self, method_name)
@@ -232,14 +238,19 @@ class _MetadataReader:
     get_variable = get_unit
 
     def get_time_step(self, name, value):
-        if value == "None":
-            self.meta[name] = None
-            return
-        minutes, months = self.read_minutes_months(value)
-        self.meta[name] = "{},{}".format(minutes, months)
+        if value and "," in value:
+            minutes, months = self.read_minutes_months(value)
+            self.meta[name] = self._time_step_from_minutes_months(minutes, months)
+        else:
+            self.meta[name] = value
 
-    get_timestamp_rounding = get_time_step
-    get_timestamp_offset = get_time_step
+    def _time_step_from_minutes_months(self, minutes, months):
+        if minutes != 0 and months != 0:
+            raise ParsingError("Invalid time step")
+        elif minutes != 0:
+            return str(minutes) + "min"
+        else:
+            return str(months) + "M"
 
     def get_interval_type(self, name, value):
         value = value.lower()
@@ -332,7 +343,7 @@ class HTimeseries:
 
         # If file format, get the metadata
         if format == self.FILE:
-            self.__dict__.update(_MetadataReader(f).meta)
+            self.__dict__.update(MetadataReader(f).meta)
 
         # Determine start_date and end_date as ISO8601 strings
         start_date = "0001-01-01 00:00" if start_date is None else start_date
@@ -382,7 +393,7 @@ class HTimeseries:
 
     def write(self, f, format=TEXT, version=4):
         if format == self.FILE:
-            _MetadataWriter(f, self, version=version).write_meta()
+            MetadataWriter(f, self, version=version).write_meta()
             f.write("\r\n")
 
         if self.data.empty:

@@ -61,8 +61,7 @@ The contents of the filelike object can be in text format or file format (see
 be specified with the ``format`` parameter.  If reading in text format,
 the returned object just has the ``data`` attribute set. If reading in
 file format , the returned object also has attributes ``unit``,
-``title``, ``comment``, ``timezone``, ``time_step``,
-``timestamp_rounding``, ``timestamp_offset``, ``interval_type``,
+``title``, ``comment``, ``timezone``, ``time_step``, ``interval_type``,
 ``variable``, ``precision`` and ``location``. For the meaning of these
 attributes, see section "File format" below.
 
@@ -81,7 +80,7 @@ the database contents.
 The ``location`` attribute is a dictionary that has items ``abscissa``,
 ``ordinate``, ``srid``, ``altitude``, and ``asrid``.
 
-**.write(f, format=HTimeseries.TEXT, version=4)**
+**.write(f, format=HTimeseries.TEXT, version=5)**
 
 Writes the time series to filelike object ``f``. In accordance with the
 formats described below, time series are written
@@ -197,12 +196,17 @@ The parameters available are:
 
   * Version 3 files do not have the *Version* parameter. At least one of
     the other parameters must be present. Unrecognized parameters are
-    ignored when reading. The deprecated parameter names
+    ignored when reading. The old deprecated parameter names
     *Nominal_offset* and *Actual_offset* are used instead of the newer
-    ones *Timestamp_rounding* and *Timestamp_offset*.
+    (but also deprecated) ones *Timestamp_rounding* and
+    *Timestamp_offset*.
 
   * Version 4 files are the same as Version 3, except for the names of
     the parameters *Timestamp_rounding* and *Timestamp_offset*.
+
+  * Version 5 files are the same as Version 4, except that
+    *Timestamp_rounding* and *Timestamp_offset* do not exist, and
+    *Time_step* is in a different format (see below).
 
 **Unit**
     A symbol for the measurement unit, like ``°C`` or ``mm``.
@@ -242,11 +246,25 @@ The parameters available are:
     convert this string to a tzinfo_ object.
 
 **Time_step**
-    A comma-separated pair of integers; the number of minutes and months
-    in the time step (one of the two mut be zero). If missing, the time
-    series is without time step.
+    In version 5, a pandas "frequency" string such as ``10min`` (10
+    minutes), ``H`` (hour), or ``2M`` (two months).
+
+    Up to version 4, a comma-separated pair of integers; the number of
+    minutes and months in the time step (one of the two must be zero).
+    If missing, the time series is without time step.
+
+    When reading from version 4 or earlier, the pair of integers is
+    automatically converted to a pandas "frequency" string, so the
+    ``time_step`` attribute of an ``HTimeseries`` object is always a
+    pandas "frequency" string. Likewise, when writing to a version 4
+    or earlier file, the pandas "frequency" string is automatically
+    converted to the pair of integers.
 
 **Timestamp_rounding**
+    Deprecated. It might be found in old files, Version 4 or earlier,
+    but ``htimeseries`` will ignore it when reading and will never write
+    it.
+
     A comma-separated pair of integers indicating the number of minutes
     and months that must be added to a round timestamp to get to the
     nominal timestamp.  For example, if an hourly time series has
@@ -269,6 +287,10 @@ The parameters available are:
     *Version* parameter above for more information.
 
 **Timestamp_offset**
+    Deprecated. It might be found in old files, Version 4 or earlier,
+    but ``htimeseries`` will ignore it when reading and will never write
+    it.
+
     A comma-separated pair of integers indicating the number of minutes
     and months that must be added to the nominal timestamp to get to the
     actual timestamp. The timestamp offset for small time steps, such as

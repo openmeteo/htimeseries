@@ -2,6 +2,15 @@
 History
 =======
 
+DEV
+===
+
+- Changed the way the time step is specified. Instead of
+  "minutes,months", it is now a pandas "frequency" offset specification
+  such as "5min" or "3M".
+- The timestamp_offset and timestamp_rounding parameters have been
+  abolished.
+
 1.1.2 (2019-07-18)
 ==================
 

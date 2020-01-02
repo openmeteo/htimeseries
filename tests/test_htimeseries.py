@@ -1,5 +1,6 @@
 import datetime as dt
 import textwrap
+from configparser import ParsingError
 from io import StringIO
 from unittest import TestCase
 
@@ -7,7 +8,7 @@ import numpy as np
 import pandas as pd
 from iso8601 import parse_date
 
-from htimeseries import HTimeseries
+from htimeseries import HTimeseries, MetadataReader, MetadataWriter
 
 tenmin_test_timeseries = textwrap.dedent(
     """\
@@ -32,8 +33,6 @@ tenmin_test_timeseries_file_version_2 = textwrap.dedent(
     Comment=These five lines form two paragraphs.\r
     Timezone=EET (UTC+0200)\r
     Time_step=10,0\r
-    Nominal_offset=0,0\r
-    Actual_offset=0,0\r
     Variable=temperature\r
     Precision=1\r
     \r
@@ -57,8 +56,6 @@ tenmin_test_timeseries_file_version_3 = textwrap.dedent(
     Comment=These five lines form two paragraphs.\r
     Timezone=EET (UTC+0200)\r
     Time_step=10,0\r
-    Nominal_offset=0,0\r
-    Actual_offset=0,0\r
     Variable=temperature\r
     Precision=1\r
     Location=24.678900 38.123450 4326\r
@@ -84,8 +81,6 @@ tenmin_test_timeseries_file_version_4 = textwrap.dedent(
     Comment=These five lines form two paragraphs.\r
     Timezone=EET (UTC+0200)\r
     Time_step=10,0\r
-    Timestamp_rounding=0,0\r
-    Timestamp_offset=0,0\r
     Variable=temperature\r
     Precision=1\r
     Location=24.678900 38.123450 4326\r
@@ -111,8 +106,6 @@ tenmin_test_timeseries_file_no_altitude = textwrap.dedent(
     Comment=These five lines form two paragraphs.\r
     Timezone=EET (UTC+0200)\r
     Time_step=10,0\r
-    Timestamp_rounding=0,0\r
-    Timestamp_offset=0,0\r
     Variable=temperature\r
     Precision=1\r
     Location=24.678900 38.123450 4326\r
@@ -137,8 +130,6 @@ tenmin_test_timeseries_file_no_location = textwrap.dedent(
     Comment=These five lines form two paragraphs.\r
     Timezone=EET (UTC+0200)\r
     Time_step=10,0\r
-    Timestamp_rounding=0,0\r
-    Timestamp_offset=0,0\r
     Variable=temperature\r
     Precision=1\r
     \r
@@ -162,8 +153,6 @@ tenmin_test_timeseries_file_no_precision = textwrap.dedent(
     Comment=These five lines form two paragraphs.\r
     Timezone=EET (UTC+0200)\r
     Time_step=10,0\r
-    Timestamp_rounding=0,0\r
-    Timestamp_offset=0,0\r
     Variable=temperature\r
     Location=24.678900 38.123450 4326\r
     Altitude=219.22\r
@@ -188,8 +177,6 @@ tenmin_test_timeseries_file_zero_precision = textwrap.dedent(
     Comment=These five lines form two paragraphs.\r
     Timezone=EET (UTC+0200)\r
     Time_step=10,0\r
-    Timestamp_rounding=0,0\r
-    Timestamp_offset=0,0\r
     Variable=temperature\r
     Precision=0\r
     Location=24.678900 38.123450 4326\r
@@ -216,8 +203,6 @@ tenmin_test_timeseries_file_negative_precision = textwrap.dedent(
     Comment=These five lines form two paragraphs.\r
     Timezone=EET (UTC+0200)\r
     Time_step=10,0\r
-    Timestamp_rounding=0,0\r
-    Timestamp_offset=0,0\r
     Variable=temperature\r
     Precision=-1\r
     Location=24.678900 38.123450 4326\r
@@ -296,12 +281,10 @@ class HTimeseriesWriteFileTestCase(TestCase):
             dtype={"value": np.float64, "flags": str},
         ).asfreq("10T")
         self.reference_ts = HTimeseries(data=data)
-        self.reference_ts.timestamp_rounding = "0,0"
-        self.reference_ts.timestamp_offset = "0,0"
         self.reference_ts.unit = "°C"
         self.reference_ts.title = "A test 10-min time series"
         self.reference_ts.precision = 1
-        self.reference_ts.time_step = "10,0"
+        self.reference_ts.time_step = "10min"
         self.reference_ts.timezone = "EET (UTC+0200)"
         self.reference_ts.variable = "temperature"
         self.reference_ts.comment = (
@@ -332,6 +315,16 @@ class HTimeseriesWriteFileTestCase(TestCase):
         outstring = StringIO()
         self.reference_ts.write(outstring, format=HTimeseries.FILE, version=4)
         self.assertEqual(outstring.getvalue(), tenmin_test_timeseries_file_version_4)
+
+    def test_version_5(self):
+        outstring = StringIO()
+        self.reference_ts.write(outstring, format=HTimeseries.FILE, version=5)
+        self.assertEqual(
+            outstring.getvalue(),
+            tenmin_test_timeseries_file_version_4.replace(
+                "Time_step=10,0", "Time_step=10min"
+            ),
+        )
 
     def test_altitude_none(self):
         self.reference_ts.location["altitude"] = None
@@ -555,13 +548,7 @@ class HTimeseriesReadFileFormatTestCase(TestCase):
         self.assertEqual(self.ts.timezone, "EET (UTC+0200)")
 
     def test_time_step(self):
-        self.assertEqual(self.ts.time_step, "10,0")
-
-    def test_timestamp_rounding(self):
-        self.assertEqual(self.ts.timestamp_rounding, "0,0")
-
-    def test_timestamp_offset(self):
-        self.assertEqual(self.ts.timestamp_offset, "0,0")
+        self.assertEqual(self.ts.time_step, "10min")
 
     def test_variable(self):
         self.assertEqual(self.ts.variable, "temperature")
@@ -604,22 +591,6 @@ class HTimeseriesReadFileFormatTestCase(TestCase):
         )
 
 
-class HTimeseriesReadTimestampRoundingNoneTestCase(TestCase):
-    def setUp(self):
-        str1 = tenmin_test_timeseries_file_version_4.replace(
-            "Timestamp_rounding=0,0", "Timestamp_rounding=None"
-        ).replace("Timestamp_offset=0,0", "Timestamp_offset=None")
-        s = StringIO(str1)
-        s.seek(0)
-        self.ts = HTimeseries(s)
-
-    def test_timestamp_rounding(self):
-        self.assertIsNone(self.ts.timestamp_rounding)
-
-    def test_timestamp_offset(self):
-        self.assertIsNone(self.ts.timestamp_offset)
-
-
 class HTimeseriesAutoDetectFormatTestCase(TestCase):
     def test_auto_detect_text_format(self):
         self.assertEqual(
@@ -634,3 +605,58 @@ class HTimeseriesAutoDetectFormatTestCase(TestCase):
             ),
             HTimeseries.FILE,
         )
+
+
+class WriteOldTimeStepTestCase(TestCase):
+    def get_value(self, time_step):
+        self.f = StringIO()
+        self.htimeseries = HTimeseries()
+        self.htimeseries.time_step = time_step
+        MetadataWriter(self.f, self.htimeseries)._write_old_time_step()
+        return self.f.getvalue()
+
+    def test_min(self):
+        self.assertEqual(self.get_value("27min"), "Time_step=27,0\r\n")
+
+    def test_hour(self):
+        self.assertEqual(self.get_value("3H"), "Time_step=180,0\r\n")
+
+    def test_day(self):
+        self.assertEqual(self.get_value("3D"), "Time_step=4320,0\r\n")
+
+    def test_month(self):
+        self.assertEqual(self.get_value("3M"), "Time_step=0,3\r\n")
+
+    def test_year(self):
+        self.assertEqual(self.get_value("3Y"), "Time_step=0,36\r\n")
+
+    def test_empty(self):
+        with self.assertRaisesRegex(ValueError, 'Cannot format time step ""'):
+            self.get_value("")
+
+    def test_garbage(self):
+        with self.assertRaisesRegex(ValueError, 'Cannot format time step "hello"'):
+            self.get_value("hello")
+
+    def test_wrong_number(self):
+        with self.assertRaisesRegex(ValueError, 'Cannot format time step "FM"'):
+            self.get_value("FM")
+
+
+class GetTimeStepTestCase(TestCase):
+    def get_value(self, time_step):
+        f = StringIO("Time_step={}\r\n\r\n".format(time_step))
+        return MetadataReader(f).meta["time_step"]
+
+    def test_min(self):
+        self.assertEqual(self.get_value("1min"), "1min")
+
+    def test_minutes(self):
+        self.assertEqual(self.get_value("250,0"), "250min")
+
+    def test_months(self):
+        self.assertEqual(self.get_value("0,25"), "25M")
+
+    def test_both_nonzero(self):
+        with self.assertRaisesRegex(ParsingError, "Invalid time step"):
+            self.get_value("5,5")
