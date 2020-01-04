@@ -162,6 +162,10 @@ class MetadataWriter:
         self.f.write(fmt.format(altitude=altitude, asrid=asrid))
 
     def write_time_step(self):
+        if getattr(self.htimeseries, "time_step", ""):
+            self._write_nonempty_time_step()
+
+    def _write_nonempty_time_step(self):
         if self.version >= 5:
             self.f.write("Time_step={}\r\n".format(self.htimeseries.time_step))
         else:

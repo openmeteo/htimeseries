@@ -612,8 +612,11 @@ class WriteOldTimeStepTestCase(TestCase):
         self.f = StringIO()
         self.htimeseries = HTimeseries()
         self.htimeseries.time_step = time_step
-        MetadataWriter(self.f, self.htimeseries)._write_old_time_step()
+        MetadataWriter(self.f, self.htimeseries, version=2).write_time_step()
         return self.f.getvalue()
+
+    def test_empty(self):
+        self.assertEqual(self.get_value(""), "")
 
     def test_min(self):
         self.assertEqual(self.get_value("27min"), "Time_step=27,0\r\n")
@@ -629,10 +632,6 @@ class WriteOldTimeStepTestCase(TestCase):
 
     def test_year(self):
         self.assertEqual(self.get_value("3Y"), "Time_step=0,36\r\n")
-
-    def test_empty(self):
-        with self.assertRaisesRegex(ValueError, 'Cannot format time step ""'):
-            self.get_value("")
 
     def test_garbage(self):
         with self.assertRaisesRegex(ValueError, 'Cannot format time step "hello"'):
