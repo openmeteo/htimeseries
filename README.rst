@@ -247,11 +247,11 @@ The parameters available are:
 
 **Time_step**
     In version 5, a pandas "frequency" string such as ``10min`` (10
-    minutes), ``H`` (hour), or ``2M`` (two months).
+    minutes), ``H`` (hour), or ``2M`` (two months). If missing or empty,
+    the time series is without time step.
 
     Up to version 4, a comma-separated pair of integers; the number of
     minutes and months in the time step (one of the two must be zero).
-    If missing, the time series is without time step.
 
     When reading from version 4 or earlier, the pair of integers is
     automatically converted to a pandas "frequency" string, so the
