@@ -326,6 +326,16 @@ class HTimeseriesWriteFileTestCase(TestCase):
             ),
         )
 
+    def test_version_latest(self):
+        outstring = StringIO()
+        self.reference_ts.write(outstring, format=HTimeseries.FILE)
+        self.assertEqual(
+            outstring.getvalue(),
+            tenmin_test_timeseries_file_version_4.replace(
+                "Time_step=10,0", "Time_step=10min"
+            ),
+        )
+
     def test_altitude_none(self):
         self.reference_ts.location["altitude"] = None
         outstring = StringIO()
