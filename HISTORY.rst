@@ -2,8 +2,8 @@
 History
 =======
 
-DEV
-===
+2.0.0 (2020-01-04)
+==================
 
 - Changed the way the time step is specified. Instead of
   "minutes,months", it is now a pandas "frequency" offset specification
