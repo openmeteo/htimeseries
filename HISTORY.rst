@@ -2,6 +2,11 @@
 History
 =======
 
+2.0.3 (2020-01-05)
+==================
+
+- Default version when writing file is now latest.
+
 2.0.1 (2020-01-04)
 ==================
 

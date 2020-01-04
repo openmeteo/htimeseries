@@ -95,7 +95,7 @@ class _FilePart(object):
 
 
 class MetadataWriter:
-    def __init__(self, f, htimeseries, version=5):
+    def __init__(self, f, htimeseries, version):
         self.version = version
         self.htimeseries = htimeseries
         self.f = f
@@ -166,7 +166,7 @@ class MetadataWriter:
             self._write_nonempty_time_step()
 
     def _write_nonempty_time_step(self):
-        if self.version >= 5:
+        if self.version is None or self.version >= 5:
             self.f.write("Time_step={}\r\n".format(self.htimeseries.time_step))
         else:
             self._write_old_time_step()
@@ -395,7 +395,7 @@ class HTimeseries:
                 return line
         return ""
 
-    def write(self, f, format=TEXT, version=4):
+    def write(self, f, format=TEXT, version=5):
         if format == self.FILE:
             MetadataWriter(f, self, version=version).write_meta()
             f.write("\r\n")

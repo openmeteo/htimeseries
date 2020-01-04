@@ -80,7 +80,7 @@ the database contents.
 The ``location`` attribute is a dictionary that has items ``abscissa``,
 ``ordinate``, ``srid``, ``altitude``, and ``asrid``.
 
-**.write(f, format=HTimeseries.TEXT, version=5)**
+**.write(f, format=HTimeseries.TEXT, version=None)**
 
 Writes the time series to filelike object ``f``. In accordance with the
 formats described below, time series are written
@@ -89,7 +89,8 @@ using the CR-LF sequence to terminate lines.  Care should be taken that
 translation; otherwise it may result in lines being terminated with
 CR-CR-LF. If ``f`` is a file, it should have been opened in binary mode.
 
-``version`` is ignored unless ``format=HTimeseries.FILE``.
+``version`` is ignored unless ``format=HTimeseries.FILE``. The default
+``version`` is latest.
 
 While writing, the value of the ``precision`` attribute is taken into
 account.
