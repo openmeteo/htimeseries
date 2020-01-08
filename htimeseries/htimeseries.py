@@ -183,18 +183,17 @@ class MetadataWriter:
         return str(int(td.total_seconds() / 60)) + ",0"
 
     def _get_old_time_step_in_months(self):
+        time_step = self.htimeseries.time_step
         try:
-            unit = self.htimeseries.time_step[-1]
-            value = self.htimeseries.time_step[:-1]
+            unit = time_step[-1]
+            value = time_step[:-1] if (len(time_step) > 1) else 1
             if unit == "M":
                 return "0," + str(int(value))
             elif unit in ("A", "Y"):
                 return "0," + str(12 * int(value))
         except (IndexError, ValueError):
             pass
-        raise ValueError(
-            'Cannot format time step "{}"'.format(self.htimeseries.time_step)
-        )
+        raise ValueError('Cannot format time step "{}"'.format(time_step))
 
 
 class MetadataReader:

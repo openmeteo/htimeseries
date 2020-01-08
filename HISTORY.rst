@@ -2,6 +2,12 @@
 History
 =======
 
+2.0.4 (2020-01-08)
+==================
+
+- Fixed crash when saving in version 2 and the time step was a mere "M"
+  or "Y" without multiplier.
+
 2.0.3 (2020-01-05)
 ==================
 
