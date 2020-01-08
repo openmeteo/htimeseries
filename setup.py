@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import os
+import re
+
 from setuptools import find_packages, setup
 
 with open("README.rst") as readme_file:
@@ -13,6 +16,14 @@ requirements = ["pandas>=0.20", "iso8601", "textbisect"]
 setup_requirements = []
 
 test_requirements = []
+
+
+def get_version():
+    scriptdir = os.path.dirname(os.path.abspath(__file__))
+    init_py_path = os.path.join(scriptdir, "htimeseries", "__init__.py")
+    with open(init_py_path) as f:
+        return re.search(r'^__version__ = "(.*?)"$', f.read(), re.MULTILINE).group(1)
+
 
 setup(
     name="htimeseries",
@@ -37,6 +48,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/openmeteo/htimeseries",
-    version="2.0.3",
+    version=get_version(),
     zip_safe=False,
 )

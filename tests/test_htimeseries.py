@@ -631,17 +631,32 @@ class WriteOldTimeStepTestCase(TestCase):
     def test_min(self):
         self.assertEqual(self.get_value("27min"), "Time_step=27,0\r\n")
 
+    def test_min_without_number(self):
+        self.assertEqual(self.get_value("min"), "Time_step=1,0\r\n")
+
     def test_hour(self):
         self.assertEqual(self.get_value("3H"), "Time_step=180,0\r\n")
+
+    def test_hour_without_number(self):
+        self.assertEqual(self.get_value("H"), "Time_step=60,0\r\n")
 
     def test_day(self):
         self.assertEqual(self.get_value("3D"), "Time_step=4320,0\r\n")
 
+    def test_day_without_number(self):
+        self.assertEqual(self.get_value("D"), "Time_step=1440,0\r\n")
+
     def test_month(self):
         self.assertEqual(self.get_value("3M"), "Time_step=0,3\r\n")
 
+    def test_month_without_number(self):
+        self.assertEqual(self.get_value("M"), "Time_step=0,1\r\n")
+
     def test_year(self):
         self.assertEqual(self.get_value("3Y"), "Time_step=0,36\r\n")
+
+    def test_year_without_number(self):
+        self.assertEqual(self.get_value("Y"), "Time_step=0,12\r\n")
 
     def test_garbage(self):
         with self.assertRaisesRegex(ValueError, 'Cannot format time step "hello"'):
