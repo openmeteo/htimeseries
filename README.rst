@@ -308,7 +308,7 @@ The parameters available are:
     *Version* parameter above for more information.
 
 **Interval_type**
-    Has one of the values ``sum``, ``average``, ``maximum``,
+    Deprecated. Has one of the values ``sum``, ``average``, ``maximum``,
     ``minimum``, and ``vector_average``. If absent it means that the
     time series values are instantaneous, they do not refer to
     intervals.
