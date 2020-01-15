@@ -2,6 +2,12 @@
 History
 =======
 
+2.0.5 (2020-01-15)
+==================
+
+- Fix pandas dependency to use pandas<1, so that Python 3.5
+  compatibility is kept.
+
 2.0.4 (2020-01-08)
 ==================
 
