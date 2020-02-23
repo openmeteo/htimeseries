@@ -381,6 +381,16 @@ class TimeseriesStreamReader:
         return TimeseriesRecordsReader(self.f, self.start_date, self.end_date).read()
 
 
+def _check_timeseries_index_has_no_duplicates(data, error_message_prefix):
+    duplicate_dates = data.index[data.index.duplicated()].tolist()
+    if duplicate_dates:
+        dates_str = ", ".join([str(x) for x in duplicate_dates])
+        raise ValueError(
+            f"{error_message_prefix}: the following timestamps appear more than "
+            f"once: {dates_str}"
+        )
+
+
 class TimeseriesRecordsReader:
     def __init__(self, f, start_date, end_date):
         self.f = f
@@ -390,7 +400,9 @@ class TimeseriesRecordsReader:
     def read(self):
         start_date, end_date = self._get_bounding_dates_as_strings()
         f2 = self._get_stream_part_between_dates(start_date, end_date)
-        return self._read_data_from_stream(f2)
+        data = self._read_data_from_stream(f2)
+        self._check_there_are_no_duplicates(data)
+        return data
 
     def _get_bounding_dates_as_strings(self):
         start_date = "0001-01-01 00:00" if self.start_date is None else self.start_date
@@ -418,6 +430,11 @@ class TimeseriesRecordsReader:
             header=None,
             converters={"flags": lambda x: x},
             dtype={"value": np.float64},
+        )
+
+    def _check_there_are_no_duplicates(self, data):
+        _check_timeseries_index_has_no_duplicates(
+            data, error_message_prefix="Can't read time series"
         )
 
 
@@ -473,8 +490,14 @@ class TimeseriesRecordsWriter:
     def write(self):
         if self.htimeseries.data.empty:
             return
+        self._check_there_are_no_duplicates()
         self._setup_precision()
         self._write_records()
+
+    def _check_there_are_no_duplicates(self):
+        _check_timeseries_index_has_no_duplicates(
+            self.htimeseries.data, error_message_prefix="Can't write time series"
+        )
 
     def _setup_precision(self):
         precision = getattr(self.htimeseries, "precision", None)

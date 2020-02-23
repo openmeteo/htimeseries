@@ -680,3 +680,43 @@ class GetTimeStepTestCase(TestCase):
     def test_both_nonzero(self):
         with self.assertRaisesRegex(ParsingError, "Invalid time step"):
             self.get_value("5,5")
+
+
+class HTimeseriesReadWithDuplicateDatesTestCase(TestCase):
+    csv_with_duplicates = textwrap.dedent(
+        """\
+        2020-02-23 11:00,5,
+        2020-02-23 12:00,6,
+        2020-02-23 12:00,7,
+        2020-02-23 13:00,8,
+        2020-02-23 13:00,8,
+        2020-02-23 14:00,8,
+        """
+    )
+
+    def test_read_csv_with_duplicates_raises_error(self):
+        s = StringIO(self.csv_with_duplicates)
+        s.seek(0)
+        msg = (
+            "Can't read time series: the following timestamps appear more than once: "
+            "2020-02-23 12:00:00, 2020-02-23 13:00:00"
+        )
+        with self.assertRaisesRegex(ValueError, msg):
+            HTimeseries(s)
+
+    def test_write_csv_with_duplicates_raises_error(self):
+        data = pd.read_csv(
+            StringIO(self.csv_with_duplicates),
+            parse_dates=[0],
+            usecols=["date", "value", "flags"],
+            index_col=0,
+            header=None,
+            names=("date", "value", "flags"),
+            dtype={"value": np.float64, "flags": str},
+        )
+        msg = (
+            "Can't write time series: the following timestamps appear more than once: "
+            "2020-02-23 12:00:00, 2020-02-23 13:00:00"
+        )
+        with self.assertRaisesRegex(ValueError, msg):
+            HTimeseries(data).write(StringIO())
