@@ -1,7 +1,6 @@
 language: python
 python:
-  - 3.6
-  - 3.5
+  - 3.7
 
 install:
  - pip install --upgrade pip
@@ -9,7 +8,7 @@ install:
  - pip install -e .
 
 script:
- - if python -c "import sys; exit(not (sys.version >= '3.6'))"; then pip install black; black --check .; fi
+ - pip install black; black --check .
  - flake8 --max-line-length=88 .
  - isort --recursive --check-only --diff *.py htimeseries tests
  - ./setup.py sdist bdist_wheel
