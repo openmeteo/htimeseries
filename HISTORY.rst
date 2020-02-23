@@ -2,6 +2,13 @@
 History
 =======
 
+3.0.0 (2020-02-23)
+==================
+
+- Only Python>=3.7 is now supported.
+- When reading or writing a time series, it now checks that there are no
+  duplicate timestamps and raises an exception if there are.
+
 2.0.5 (2020-01-15)
 ==================
 
