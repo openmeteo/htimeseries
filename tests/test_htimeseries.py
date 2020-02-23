@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from iso8601 import parse_date
 
-from htimeseries import HTimeseries, MetadataReader, MetadataWriter
+from htimeseries import FormatAutoDetector, HTimeseries, MetadataReader, MetadataWriter
 
 tenmin_test_timeseries = textwrap.dedent(
     """\
@@ -601,20 +601,16 @@ class HTimeseriesReadFileFormatTestCase(TestCase):
         )
 
 
-class HTimeseriesAutoDetectFormatTestCase(TestCase):
+class FormatAutoDetectorTestCase(TestCase):
     def test_auto_detect_text_format(self):
-        self.assertEqual(
-            HTimeseries()._auto_detect_format(StringIO(tenmin_test_timeseries)),
-            HTimeseries.TEXT,
-        )
+        detected_format = FormatAutoDetector(StringIO(tenmin_test_timeseries)).detect()
+        self.assertEqual(detected_format, HTimeseries.TEXT)
 
     def test_auto_detect_file_format(self):
-        self.assertEqual(
-            HTimeseries()._auto_detect_format(
-                StringIO(tenmin_test_timeseries_file_version_4)
-            ),
-            HTimeseries.FILE,
-        )
+        detected_format = FormatAutoDetector(
+            StringIO(tenmin_test_timeseries_file_version_4)
+        ).detect()
+        self.assertEqual(detected_format, HTimeseries.FILE)
 
 
 class WriteOldTimeStepTestCase(TestCase):

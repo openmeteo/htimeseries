@@ -340,32 +340,77 @@ class HTimeseries:
             self._read_filelike(data, **kwargs)
 
     def _read_filelike(self, f, format=None, start_date=None, end_date=None):
-        # Auto detect format if needed
-        if format is None:
-            format = self._auto_detect_format(f)
+        reader = TimeseriesStreamReader(
+            f, format=format, start_date=start_date, end_date=end_date
+        )
+        self.__dict__.update(reader.get_metadata())
+        self.data = reader.get_data()
 
-        # If file format, get the metadata
-        if format == self.FILE:
-            self.__dict__.update(MetadataReader(f).meta)
+    def write(self, f, format=TEXT, version=5):
+        writer = TimeseriesStreamWriter(self, f, format=format, version=version)
+        writer.write()
 
-        # Determine start_date and end_date as ISO8601 strings
-        start_date = "0001-01-01 00:00" if start_date is None else start_date
-        end_date = "9999-12-31 00:00" if end_date is None else end_date
+
+class TimeseriesStreamReader:
+    def __init__(self, f, *, format, start_date, end_date):
+        self.f = f
+        self.specified_format = format
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def get_metadata(self):
+        if self.format == HTimeseries.FILE:
+            return MetadataReader(self.f).meta
+        else:
+            return {}
+
+    @property
+    def format(self):
+        if self.specified_format is None:
+            return self.autodetected_format
+        else:
+            return self.specified_format
+
+    @property
+    def autodetected_format(self):
+        if not hasattr(self, "_stored_autodetected_format"):
+            self._stored_autodetected_format = FormatAutoDetector(self.f).detect()
+        return self._stored_autodetected_format
+
+    def get_data(self):
+        return TimeseriesRecordsReader(self.f, self.start_date, self.end_date).read()
+
+
+class TimeseriesRecordsReader:
+    def __init__(self, f, start_date, end_date):
+        self.f = f
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def read(self):
+        start_date, end_date = self._get_bounding_dates_as_strings()
+        f2 = self._get_stream_part_between_dates(start_date, end_date)
+        return self._read_data_from_stream(f2)
+
+    def _get_bounding_dates_as_strings(self):
+        start_date = "0001-01-01 00:00" if self.start_date is None else self.start_date
+        end_date = "9999-12-31 00:00" if self.end_date is None else self.end_date
         if isinstance(start_date, dt.datetime):
             start_date = start_date.strftime("%Y-%m-%d %H:%M")
         if isinstance(end_date, dt.datetime):
             end_date = end_date.strftime("%Y-%m-%d %H:%M")
+        return start_date, end_date
 
-        # Determine the subset of the file that is of interest
-        lo = f.tell()
+    def _get_stream_part_between_dates(self, start_date, end_date):
+        lo = self.f.tell()
         key = lambda x: x.split(",")[0]  # NOQA
-        endpos = text_bisect_right(f, end_date, lo=lo, key=key) - 1
-        startpos = text_bisect_left(f, start_date, lo=lo, key=key)
-        f2 = _FilePart(f, startpos, endpos)
+        endpos = text_bisect_right(self.f, end_date, lo=lo, key=key) - 1
+        startpos = text_bisect_left(self.f, start_date, lo=lo, key=key)
+        return _FilePart(self.f, startpos, endpos)
 
-        # Read it
-        self.data = pd.read_csv(
-            f2,
+    def _read_data_from_stream(self, f):
+        return pd.read_csv(
+            f,
             parse_dates=[0],
             names=("date", "value", "flags"),
             usecols=("date", "value", "flags"),
@@ -375,44 +420,82 @@ class HTimeseries:
             dtype={"value": np.float64},
         )
 
-    def _auto_detect_format(self, f):
-        original_position = f.tell()
-        result = self._auto_detect_format_without_restoring_file_position(f)
-        f.seek(original_position)
+
+class FormatAutoDetector:
+    def __init__(self, f):
+        self.f = f
+
+    def detect(self):
+        original_position = self.f.tell()
+        result = self._guess_format_from_first_nonempty_line()
+        self.f.seek(original_position)
         return result
 
-    def _auto_detect_format_without_restoring_file_position(self, f):
-        line = self._get_first_nonempty_line(f)
+    def _guess_format_from_first_nonempty_line(self):
+        line = self._get_first_nonempty_line()
         if line and not line[0].isdigit():
-            return self.FILE
+            return HTimeseries.FILE
         else:
-            return self.TEXT
+            return HTimeseries.TEXT
 
-    def _get_first_nonempty_line(self, f):
-        for line in f:
+    def _get_first_nonempty_line(self):
+        for line in self.f:
             if line.strip():
                 return line
         return ""
 
-    def write(self, f, format=TEXT, version=5):
-        if format == self.FILE:
-            MetadataWriter(f, self, version=version).write_meta()
-            f.write("\r\n")
 
-        if self.data.empty:
+class TimeseriesStreamWriter:
+    def __init__(self, htimeseries, f, *, format, version):
+        self.htimeseries = htimeseries
+        self.f = f
+        self.format = format
+        self.version = version
+
+    def write(self):
+        self._write_metadata()
+        self._write_records()
+
+    def _write_metadata(self):
+        if self.format == HTimeseries.FILE:
+            MetadataWriter(self.f, self.htimeseries, version=self.version).write_meta()
+            self.f.write("\r\n")
+
+    def _write_records(self):
+        TimeseriesRecordsWriter(self.htimeseries, self.f).write()
+
+
+class TimeseriesRecordsWriter:
+    def __init__(self, htimeseries, f):
+        self.htimeseries = htimeseries
+        self.f = f
+
+    def write(self):
+        if self.htimeseries.data.empty:
             return
-        float_format = "%f"
-        if hasattr(self, "precision") and self.precision is not None:
-            if self.precision >= 0:
-                float_format = "%.{}f".format(self.precision)
-            else:
-                float_format = "%.0f"
-                datacol = self.data.columns[0]
-                m = 10 ** (-self.precision)
-                self.data[datacol] = np.rint(self.data[datacol] / m) * m
-        self.data.to_csv(
-            f,
-            float_format=float_format,
+        self._setup_precision()
+        self._write_records()
+
+    def _setup_precision(self):
+        precision = getattr(self.htimeseries, "precision", None)
+        if precision is None:
+            self.float_format = "%f"
+        elif self.htimeseries.precision >= 0:
+            self.float_format = "%.{}f".format(self.htimeseries.precision)
+        else:
+            self.float_format = "%.0f"
+            self._prepare_records_for_negative_precision(precision)
+
+    def _prepare_records_for_negative_precision(self, precision):
+        assert precision < 0
+        datacol = self.htimeseries.data.columns[0]
+        m = 10 ** (-self.htimeseries.precision)
+        self.htimeseries.data[datacol] = np.rint(self.htimeseries.data[datacol] / m) * m
+
+    def _write_records(self):
+        self.htimeseries.data.to_csv(
+            self.f,
+            float_format=self.float_format,
             header=False,
             mode="wb",
             line_terminator="\r\n",
