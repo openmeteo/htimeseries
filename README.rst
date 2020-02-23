@@ -87,7 +87,8 @@ formats described below, time series are written
 using the CR-LF sequence to terminate lines.  Care should be taken that
 ``f``, or any subsequent operations on ``f``, do not perform text
 translation; otherwise it may result in lines being terminated with
-CR-CR-LF. If ``f`` is a file, it should have been opened in binary mode.
+CR-CR-LF. If ``f`` is a file, it should have been opened with
+`newline="\n"`.
 
 ``version`` is ignored unless ``format=HTimeseries.FILE``. The default
 ``version`` is latest.
