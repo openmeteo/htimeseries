@@ -421,6 +421,27 @@ class TimeseriesRecordsReader:
         return _FilePart(self.f, startpos, endpos)
 
     def _read_data_from_stream(self, f):
+        try:
+            pos = f.tell()
+            return self._read_three_columns_from_stream(f)
+        except pd.errors.ParserError:
+            f.seek(pos)
+            return self._read_two_columns_from_stream(f)
+
+    def _read_two_columns_from_stream(self, f):
+        result = pd.read_csv(
+            f,
+            parse_dates=[0],
+            names=("date", "value"),
+            usecols=("date", "value"),
+            index_col=0,
+            header=None,
+            dtype={"value": np.float64},
+        )
+        result["flags"] = ""
+        return result
+
+    def _read_three_columns_from_stream(self, f):
         return pd.read_csv(
             f,
             parse_dates=[0],

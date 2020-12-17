@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 import textwrap
 from configparser import ParsingError
 from io import StringIO
@@ -395,12 +396,7 @@ class HTimeseriesWriteFileTestCase(TestCase):
         )
 
 
-class HTimeseriesReadFilelikeTestCase(TestCase):
-    def setUp(self):
-        s = StringIO(tenmin_test_timeseries)
-        s.seek(0)
-        self.ts = HTimeseries(s)
-
+class ReadFilelikeTestCaseBase:
     def test_length(self):
         self.assertEqual(len(self.ts.data), 5)
 
@@ -418,6 +414,39 @@ class HTimeseriesReadFilelikeTestCase(TestCase):
     def test_flags(self):
         expected = np.array(["", "MISS", "", "", ""])
         np.testing.assert_array_equal(self.ts.data.values[:, 1], expected)
+
+
+class HTimeseriesReadFilelikeTestCase(ReadFilelikeTestCaseBase, TestCase):
+    def setUp(self):
+        s = StringIO(tenmin_test_timeseries)
+        s.seek(0)
+        self.ts = HTimeseries(s)
+
+
+class HTimeseriesReadTwoColumnsTestCase(ReadFilelikeTestCaseBase, TestCase):
+    def setUp(self):
+        string = self._remove_flags_column(tenmin_test_timeseries)
+        s = StringIO(string)
+        s.seek(0)
+        self.ts = HTimeseries(s)
+
+    def _remove_flags_column(self, s):
+        return re.sub(r",[^,]*$", "", s, flags=re.MULTILINE) + "\n"
+
+    def test_flags(self):
+        expected = np.array(["", "", "", "", ""])
+        np.testing.assert_array_equal(self.ts.data.values[:, 1], expected)
+
+
+class HTimeseriesReadMixOf2And3ColumnsTestCase(ReadFilelikeTestCaseBase, TestCase):
+    def setUp(self):
+        string = self._remove_empty_flags_column(tenmin_test_timeseries)
+        s = StringIO(string)
+        s.seek(0)
+        self.ts = HTimeseries(s)
+
+    def _remove_empty_flags_column(self, s):
+        return re.sub(r",$", "", s, flags=re.MULTILINE) + "\n"
 
 
 class HTimeseriesReadFilelikeMetadataOnlyTestCase(TestCase):

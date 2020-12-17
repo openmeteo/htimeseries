@@ -2,6 +2,13 @@
 History
 =======
 
+3.1.0 (2020-12-17)
+==================
+
+- When reading a time series from a file-like object, it is now
+  permitted for it to not have a flags column. In this case, an empty
+  flags column is automatically added to the HTimeseries object.
+
 3.0.0 (2020-02-23)
 ==================
 
