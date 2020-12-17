@@ -57,7 +57,7 @@ from it.  There must be no newline translation in ``data`` (open it with
 specified, it skips rows outside the range.
 
 The contents of the filelike object can be in text format or file format (see
-"formats" below). This usually auto-detected, but a specific format can
+"formats" below). This is usually auto-detected, but a specific format can
 be specified with the ``format`` parameter.  If reading in text format,
 the returned object just has the ``data`` attribute set. If reading in
 file format , the returned object also has attributes ``unit``,

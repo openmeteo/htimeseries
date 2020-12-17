@@ -298,8 +298,7 @@ class MetadataReader:
             raise ParsingError("Invalid altitude")
 
     def read_minutes_months(self, s):
-        """Return a (minutes, months) tuple after parsing a "M,N" string.
-        """
+        """Return a (minutes, months) tuple after parsing a "M,N" string."""
         try:
             (minutes, months) = [int(x.strip()) for x in s.split(",")]
             return minutes, months
