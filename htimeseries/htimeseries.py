@@ -540,7 +540,7 @@ class TimeseriesRecordsWriter:
             self.f,
             float_format=self.float_format,
             header=False,
-            mode="wb",
+            mode="w",
             line_terminator="\r\n",
             date_format="%Y-%m-%d %H:%M",
         )
