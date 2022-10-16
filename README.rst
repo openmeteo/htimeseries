@@ -37,19 +37,19 @@ There are also several utility methods described below.
 HTimeseries objects
 ===================
 
-**HTimeseries(data=None, format=None, start_date=None, end_date=None)**
+**HTimeseries(data=None, format=None, start_date=None, end_date=None, default_tzinfo=None)**
 
 Creates a ``HTimeseries`` object. ``data`` can be a pandas time series
 or dataframe indexed by datetime or a file-like object. If it is a
 pandas object, it becomes the value of the ``data`` attribute and the
 rest of the keyword arguments are ignored.
 
-If the ``data`` argument is a dataframe, it should have two columns
-(besides date): value and flags. However, in this version,
-``HTimeseries`` does not enforce that. A good idea is to create an empty
-``HTimeseries`` object with ``HTimeseries()``, and then proceed to fill
-in its ``data`` attribute. This ensures that the dataframe will have the
-right columns and dtypes.
+The ``data`` attribute should be a dataframe with two columns (besides
+date): value and flags. However, in this version, ``HTimeseries`` does
+not enforce that. A good idea is to create an empty ``HTimeseries``
+object with ``HTimeseries()``, and then proceed to fill in its ``data``
+attribute. This ensures that the dataframe will have the right columns
+and dtypes.
 
 If the ``data`` argument is a filelike object, the time series is read
 from it.  There must be no newline translation in ``data`` (open it with
@@ -79,6 +79,15 @@ the database contents.
 
 The ``location`` attribute is a dictionary that has items ``abscissa``,
 ``ordinate``, ``srid``, ``altitude``, and ``asrid``.
+
+The timestamps of the ``data`` attribute are aware. If ``HTimeseries()``
+is called with a dataframe, it should have an aware datetime index. If
+it is called with a filelike object whose contents are in file format
+and contain the ``timezone`` header, that time zone is used to interpret
+the file's timestamps. If it is called with a filelike object that does
+not contain a ``timezone`` header, ``default_tzinfo`` is used. In the
+latter case, if ``default_tzinfo`` is ``None`` or unspecified, an
+exception is raised.
 
 **.write(f, format=HTimeseries.TEXT, version=None)**
 
@@ -338,6 +347,7 @@ Htimeseries is
 | Copyright (C) 2013-2014 TEI of Epirus
 | Copyright (C) 2018-2021 National Technical University of Athens
 | Copyright (C) 2018-2021 Institute of Communications and Computer Systems
+| Copyright (C) 2022 IRMASYS P.C.
 
 Htimeseries is free software: you can redistribute it and/or modify it
 under the terms of the GNU Affero General Public License, as published

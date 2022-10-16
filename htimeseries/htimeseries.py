@@ -7,6 +7,8 @@ import pandas as pd
 from pandas.tseries.frequencies import to_offset
 from textbisect import text_bisect_left, text_bisect_right
 
+from .timezone_utils import TzinfoFromString
+
 
 class _BacktrackableFile(object):
     def __init__(self, fp):
@@ -329,21 +331,42 @@ class MetadataReader:
 class HTimeseries:
     TEXT = "TEXT"
     FILE = "FILE"
+    args = {
+        "format": None,
+        "start_date": None,
+        "end_date": None,
+        "default_tzinfo": None,
+    }
 
     def __init__(self, data=None, **kwargs):
+        extra_parms = set(kwargs) - set(self.args)
+        if extra_parms:
+            raise TypeError(
+                "HTimeseries.__init__() got an unexpected keyword argument "
+                f"'{extra_parms.pop()}'"
+            )
+        for arg, default_value in self.args.items():
+            kwargs.setdefault(arg, default_value)
         if data is None:
-            self._read_filelike(StringIO())
+            self._read_filelike(StringIO(), **kwargs)
         elif isinstance(data, pd.DataFrame):
             self.data = data
         else:
             self._read_filelike(data, **kwargs)
 
-    def _read_filelike(self, f, format=None, start_date=None, end_date=None):
-        reader = TimeseriesStreamReader(
-            f, format=format, start_date=start_date, end_date=end_date
-        )
+    def _read_filelike(self, *args, **kwargs):
+        reader = TimeseriesStreamReader(*args, **kwargs)
         self.__dict__.update(reader.get_metadata())
-        self.data = reader.get_data()
+        try:
+            tzinfo = TzinfoFromString(self.timezone)
+        except AttributeError:
+            tzinfo = kwargs["default_tzinfo"]
+        self.data = reader.get_data(tzinfo)
+        if self.data.size and (tzinfo is None):
+            raise TypeError(
+                "Cannot read filelike object without timezone or default_tzinfo "
+                "specified"
+            )
 
     def write(self, f, format=TEXT, version=5):
         writer = TimeseriesStreamWriter(self, f, format=format, version=version)
@@ -351,11 +374,12 @@ class HTimeseries:
 
 
 class TimeseriesStreamReader:
-    def __init__(self, f, *, format, start_date, end_date):
+    def __init__(self, f, **kwargs):
         self.f = f
-        self.specified_format = format
-        self.start_date = start_date
-        self.end_date = end_date
+        self.specified_format = kwargs["format"]
+        self.start_date = kwargs["start_date"]
+        self.end_date = kwargs["end_date"]
+        self.default_tzinfo = kwargs["default_tzinfo"]
 
     def get_metadata(self):
         if self.format == HTimeseries.FILE:
@@ -376,8 +400,10 @@ class TimeseriesStreamReader:
             self._stored_autodetected_format = FormatAutoDetector(self.f).detect()
         return self._stored_autodetected_format
 
-    def get_data(self):
-        return TimeseriesRecordsReader(self.f, self.start_date, self.end_date).read()
+    def get_data(self, tzinfo):
+        return TimeseriesRecordsReader(
+            self.f, self.start_date, self.end_date, tzinfo=tzinfo
+        ).read()
 
 
 def _check_timeseries_index_has_no_duplicates(data, error_message_prefix):
@@ -391,10 +417,11 @@ def _check_timeseries_index_has_no_duplicates(data, error_message_prefix):
 
 
 class TimeseriesRecordsReader:
-    def __init__(self, f, start_date, end_date):
+    def __init__(self, f, start_date, end_date, tzinfo):
         self.f = f
         self.start_date = start_date
         self.end_date = end_date
+        self.tzinfo = tzinfo
 
     def read(self):
         start_date, end_date = self._get_bounding_dates_as_strings()
@@ -435,6 +462,9 @@ class TimeseriesRecordsReader:
             usecols=("date", "value"),
             index_col=0,
             header=None,
+            converters={
+                "date": lambda x: pd.to_datetime(x).replace(tzinfo=self.tzinfo)
+            },
             dtype={"value": np.float64},
         )
         result["flags"] = ""
@@ -448,7 +478,10 @@ class TimeseriesRecordsReader:
             usecols=("date", "value", "flags"),
             index_col=0,
             header=None,
-            converters={"flags": lambda x: x},
+            converters={
+                "date": lambda x: pd.to_datetime(x).replace(tzinfo=self.tzinfo),
+                "flags": lambda x: x,
+            },
             dtype={"value": np.float64},
         )
 

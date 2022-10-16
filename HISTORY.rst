@@ -2,6 +2,15 @@
 History
 =======
 
+4.0.0 (2022-11-22)
+==================
+
+- The timestamps of the dataframe index are now aware. When initializing
+  a ``HTimeseries`` object with a dataframe, the dataframe index
+  timestamps must be aware. When initializing with a filelike object,
+  either the filelike object must contain a ``timezone`` header or the
+  new ``default_tzinfo`` parameter must be specified.
+
 3.1.1 (2020-12-29)
 ==================
 

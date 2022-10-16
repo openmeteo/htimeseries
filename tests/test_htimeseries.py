@@ -5,6 +5,11 @@ from configparser import ParsingError
 from io import StringIO
 from unittest import TestCase
 
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+
 import numpy as np
 import pandas as pd
 from iso8601 import parse_date
@@ -225,6 +230,17 @@ standard_empty_dataframe = pd.DataFrame(
 standard_empty_dataframe.index.name = "date"
 
 
+class HTimeseriesArgumentsTestCase(TestCase):
+    def test_raises_on_invalid_argument(self):
+        msg = r"HTimeseries.__init__\(\) got an unexpected keyword argument 'invalid'"
+        with self.assertRaisesRegex(TypeError, msg):
+            HTimeseries(invalid=42)
+
+    def test_raises_if_timezone_unspecified(self):
+        with self.assertRaises(TypeError):
+            HTimeseries(StringIO(tenmin_test_timeseries))
+
+
 class HTimeseriesEmptyTestCase(TestCase):
     def test_read_empty(self):
         s = StringIO()
@@ -402,7 +418,8 @@ class ReadFilelikeTestCaseBase:
 
     def test_dates(self):
         np.testing.assert_array_equal(
-            self.ts.data.index, pd.date_range("2008-02-07 11:20", periods=5, freq="10T")
+            self.ts.data.index,
+            pd.date_range("2008-02-07 11:20+0200", periods=5, freq="10T"),
         )
 
     def test_values(self):
@@ -416,19 +433,12 @@ class ReadFilelikeTestCaseBase:
         np.testing.assert_array_equal(self.ts.data.values[:, 1], expected)
 
 
-class HTimeseriesReadFilelikeTestCase(ReadFilelikeTestCaseBase, TestCase):
-    def setUp(self):
-        s = StringIO(tenmin_test_timeseries)
-        s.seek(0)
-        self.ts = HTimeseries(s)
-
-
 class HTimeseriesReadTwoColumnsTestCase(ReadFilelikeTestCaseBase, TestCase):
     def setUp(self):
         string = self._remove_flags_column(tenmin_test_timeseries)
         s = StringIO(string)
         s.seek(0)
-        self.ts = HTimeseries(s)
+        self.ts = HTimeseries(s, default_tzinfo=ZoneInfo("Etc/GMT-2"))
 
     def _remove_flags_column(self, s):
         return re.sub(r",[^,]*$", "", s, flags=re.MULTILINE) + "\n"
@@ -443,7 +453,7 @@ class HTimeseriesReadMixOf2And3ColumnsTestCase(ReadFilelikeTestCaseBase, TestCas
         string = self._remove_empty_flags_column(tenmin_test_timeseries)
         s = StringIO(string)
         s.seek(0)
-        self.ts = HTimeseries(s)
+        self.ts = HTimeseries(s, default_tzinfo=ZoneInfo("Etc/GMT-2"))
 
     def _remove_empty_flags_column(self, s):
         return re.sub(r",$", "", s, flags=re.MULTILINE) + "\n"
@@ -485,8 +495,9 @@ class HTimeseriesReadWithStartDateAndEndDateTestCase(TestCase):
         s.seek(0)
         self.ts = HTimeseries(
             s,
-            start_date=dt.datetime(2008, 2, 7, 11, 30),
-            end_date=dt.datetime(2008, 2, 7, 11, 55),
+            start_date=dt.datetime(2008, 2, 7, 11, 30, tzinfo=dt.timezone.utc),
+            end_date=dt.datetime(2008, 2, 7, 11, 55, tzinfo=dt.timezone.utc),
+            default_tzinfo=dt.timezone.utc,
         )
 
     def test_length(self):
@@ -494,7 +505,10 @@ class HTimeseriesReadWithStartDateAndEndDateTestCase(TestCase):
 
     def test_dates(self):
         np.testing.assert_array_equal(
-            self.ts.data.index, pd.date_range("2008-02-07 11:30", periods=3, freq="10T")
+            self.ts.data.index,
+            pd.date_range(
+                "2008-02-07 11:30", periods=3, freq="10T", tz=dt.timezone.utc
+            ),
         )
 
     def test_values(self):
@@ -513,14 +527,21 @@ class HTimeseriesReadWithStartDateTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries)
         s.seek(0)
-        self.ts = HTimeseries(s, start_date=dt.datetime(2008, 2, 7, 11, 45))
+        self.ts = HTimeseries(
+            s,
+            start_date=dt.datetime(2008, 2, 7, 11, 45, tzinfo=dt.timezone.utc),
+            default_tzinfo=dt.timezone.utc,
+        )
 
     def test_length(self):
         self.assertEqual(len(self.ts.data), 2)
 
     def test_dates(self):
         np.testing.assert_array_equal(
-            self.ts.data.index, pd.date_range("2008-02-07 11:50", periods=2, freq="10T")
+            self.ts.data.index,
+            pd.date_range(
+                "2008-02-07 11:50", periods=2, freq="10T", tz=dt.timezone.utc
+            ),
         )
 
     def test_values(self):
@@ -536,14 +557,21 @@ class HTimeseriesReadWithEndDateTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries)
         s.seek(0)
-        self.ts = HTimeseries(s, end_date=dt.datetime(2008, 2, 7, 11, 50))
+        self.ts = HTimeseries(
+            s,
+            end_date=dt.datetime(2008, 2, 7, 11, 50, tzinfo=dt.timezone.utc),
+            default_tzinfo=dt.timezone.utc,
+        )
 
     def test_length(self):
         self.assertEqual(len(self.ts.data), 4)
 
     def test_dates(self):
         np.testing.assert_array_equal(
-            self.ts.data.index, pd.date_range("2008-02-07 11:20", periods=4, freq="10T")
+            self.ts.data.index,
+            pd.date_range(
+                "2008-02-07 11:20", periods=4, freq="10T", tz=dt.timezone.utc
+            ),
         )
 
     def test_values(self):
@@ -615,7 +643,10 @@ class HTimeseriesReadFileFormatTestCase(TestCase):
 
     def test_dates(self):
         np.testing.assert_array_equal(
-            self.ts.data.index, pd.date_range("2008-02-07 11:20", periods=5, freq="10T")
+            self.ts.data.index,
+            pd.date_range(
+                "2008-02-07 11:20", periods=5, freq="10T", tz=ZoneInfo("Etc/GMT-2")
+            ),
         )
 
     def test_values(self):
