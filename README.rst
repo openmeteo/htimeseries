@@ -44,12 +44,12 @@ or dataframe indexed by datetime or a file-like object. If it is a
 pandas object, it becomes the value of the ``data`` attribute and the
 rest of the keyword arguments are ignored.
 
-The ``data`` attribute should be a dataframe with two columns (besides
-date): value and flags. However, in this version, ``HTimeseries`` does
-not enforce that. A good idea is to create an empty ``HTimeseries``
-object with ``HTimeseries()``, and then proceed to fill in its ``data``
-attribute. This ensures that the dataframe will have the right columns
-and dtypes.
+If the ``data`` argument is a dataframe, it should have two columns
+(besides date): value and flags. However, in this version,
+``HTimeseries`` does not enforce that. A good idea is to create an empty
+``HTimeseries`` object with ``HTimeseries()``, and then proceed to fill
+in its ``data`` attribute. This ensures that the dataframe will have the
+right columns and dtypes.
 
 If the ``data`` argument is a filelike object, the time series is read
 from it.  There must be no newline translation in ``data`` (open it with
