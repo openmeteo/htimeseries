@@ -432,6 +432,12 @@ class ReadFilelikeTestCaseBase:
         expected = np.array(["", "MISS", "", "", ""])
         np.testing.assert_array_equal(self.ts.data.values[:, 1], expected)
 
+    def test_tz(self):
+        self.assertEqual(
+            self.ts.data.index.tz.utcoffset(dt.datetime(2000, 1, 1)),
+            dt.timedelta(hours=2),
+        )
+
 
 class HTimeseriesReadTwoColumnsTestCase(ReadFilelikeTestCaseBase, TestCase):
     def setUp(self):
@@ -446,6 +452,12 @@ class HTimeseriesReadTwoColumnsTestCase(ReadFilelikeTestCaseBase, TestCase):
     def test_flags(self):
         expected = np.array(["", "", "", "", ""])
         np.testing.assert_array_equal(self.ts.data.values[:, 1], expected)
+
+    def test_tz(self):
+        self.assertEqual(
+            self.ts.data.index.tz.utcoffset(dt.datetime(2000, 1, 1)),
+            dt.timedelta(hours=2),
+        )
 
 
 class HTimeseriesReadMixOf2And3ColumnsTestCase(ReadFilelikeTestCaseBase, TestCase):

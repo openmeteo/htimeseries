@@ -2,6 +2,14 @@
 History
 =======
 
+4.0.2 (2022-11-27)
+==================
+
+- Worked around an old Pandas bug related to time zones
+  (https://github.com/pandas-dev/pandas/issues/11736) in order to
+  maintain compatibility with Pandas 0.23 (the bug was fixed in Pandas
+  0.24). 
+
 4.0.1 (2022-11-27)
 ==================
 
