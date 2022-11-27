@@ -2,6 +2,12 @@
 History
 =======
 
+4.0.1 (2022-11-27)
+==================
+
+- Fixed packaging error where it didn't install dependency
+  backports.zoneinfo on Python<3.9.
+
 4.0.0 (2022-11-22)
 ==================
 
