@@ -2,7 +2,6 @@
 
 import os
 import re
-import sys
 
 from setuptools import find_packages, setup
 
@@ -12,10 +11,13 @@ with open("README.rst") as readme_file:
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
-requirements = ["pandas>=0.20,<2", "iso8601", "textbisect", "tzdata"]
-
-if sys.version_info.major == 3 and sys.version_info.minor < 9:
-    requirements.append("backports.zoneinfo")
+requirements = [
+    "pandas>=0.20,<2",
+    "iso8601",
+    "textbisect",
+    "tzdata",
+    "backports.zoneinfo; python_version<'3.9'",
+]
 
 setup_requirements = []
 
