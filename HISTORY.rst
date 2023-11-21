@@ -2,6 +2,13 @@
 History
 =======
 
+5.0.0 (2023-11-21)
+==================
+
+- Removed compatibility with pandas<1. pandas 1 and 2 are now supported.
+  This helps avoid an error when reading a data file spanning a time
+  interval that contains a change to or from DST.
+
 4.0.2 (2022-11-27)
 ==================
 

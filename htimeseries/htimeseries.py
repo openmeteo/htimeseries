@@ -468,7 +468,6 @@ class TimeseriesRecordsReader:
             dtype={"value": np.float64},
         )
         result["flags"] = ""
-        self._ensure_pandas_0_23_compatibility(result)
         return result
 
     def _read_three_columns_from_stream(self, f):
@@ -485,16 +484,7 @@ class TimeseriesRecordsReader:
             },
             dtype={"value": np.float64},
         )
-        self._ensure_pandas_0_23_compatibility(result)
         return result
-
-    def _ensure_pandas_0_23_compatibility(self, result):
-        # Workaround for https://github.com/pandas-dev/pandas/issues/11736, which was
-        # fixed in 0.24.
-        if len(result) and result.index.tz is None:
-            result.index = result.index.tz_localize(dt.timezone.utc).tz_convert(
-                self.tzinfo
-            )
 
     def _check_there_are_no_duplicates(self, data):
         _check_timeseries_index_has_no_duplicates(
@@ -585,6 +575,6 @@ class TimeseriesRecordsWriter:
             float_format=self.float_format,
             header=False,
             mode="w",
-            line_terminator="\r\n",
+            lineterminator="\r\n",
             date_format="%Y-%m-%d %H:%M",
         )

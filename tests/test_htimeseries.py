@@ -792,3 +792,42 @@ class HTimeseriesReadWithDuplicateDatesTestCase(TestCase):
         )
         with self.assertRaisesRegex(ValueError, msg):
             HTimeseries(data).write(StringIO())
+
+
+class HTimeseriesTimeChangeTestCase(TestCase):
+    """Test what happens when we read a csv containing a time change.
+
+    We use a hard case here, a switch from DST to normal, which contains a duplicate
+    hour. HTimeseries will refuse to handle repeating timestamps, so we use test data
+    that does not contain a repeating hour. In that case, pandas assumes the ambiguous
+    times are before the switch.
+
+    In that case, pandas does not set a "tz" attribute to the index.
+    """
+
+    time_change_test_timeseries = textwrap.dedent(
+        """\
+        2023-10-29 02:30,15,
+        2023-10-29 03:00,16,
+        2023-10-29 03:30,17,
+        2023-10-29 04:00,20,
+        2023-10-29 04:30,21,
+        """
+    )
+
+    def setUp(self):
+        s = StringIO(self.time_change_test_timeseries)
+        s.seek(0)
+        self.ts = HTimeseries(s, default_tzinfo=ZoneInfo("Europe/Athens"))
+
+    def test_dates(self):
+        expected = np.array(
+            [
+                dt.datetime(2023, 10, 28, 23, 30, 0, tzinfo=dt.timezone.utc),
+                dt.datetime(2023, 10, 29, 0, 0, 0, tzinfo=dt.timezone.utc),
+                dt.datetime(2023, 10, 29, 0, 30, 0, tzinfo=dt.timezone.utc),
+                dt.datetime(2023, 10, 29, 2, 0, 0, tzinfo=dt.timezone.utc),
+                dt.datetime(2023, 10, 29, 2, 30, 0, tzinfo=dt.timezone.utc),
+            ]
+        )
+        np.testing.assert_array_equal(self.ts.data.index, expected)
