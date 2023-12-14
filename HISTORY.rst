@@ -5,7 +5,12 @@ History
 6.0.0 (2023-12-14)
 ==================
 
-- Increased CSV reading speed by two orders of magnitude
+- Python 3.9 is now required (the reason for this is that backports.zoneinfo is
+  behaving differently from zoneinfo).
+- Only pandas>=1.5,<2  is now supported. Pandas<1.5 probably did not work in
+  5.0.0 either, but it had not been discovered. Pandas>=2 handles ambiguous
+  times differently and is therefore still unsupported.
+- Increased CSV reading speed by two orders of magnitude.
 
 5.0.0 (2023-11-21)
 ==================

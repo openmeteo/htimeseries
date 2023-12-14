@@ -12,11 +12,10 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "pandas>=1,<3",
+    "pandas>=1.5,<2",
     "iso8601",
     "textbisect",
     "tzdata",
-    "backports.zoneinfo; python_version<'3.9'",
 ]
 
 setup_requirements = []
@@ -40,11 +39,10 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     description="Hydrological and meteorological timeseries",
     install_requires=requirements,
