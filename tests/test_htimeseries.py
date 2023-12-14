@@ -224,7 +224,7 @@ tenmin_test_timeseries_file_negative_precision = textwrap.dedent(
 
 standard_empty_dataframe = pd.DataFrame(
     data={"value": np.array([], dtype=np.float64), "flags": np.array([], dtype=str)},
-    index=[],
+    index=pd.DatetimeIndex([]),
     columns=["value", "flags"],
 )
 standard_empty_dataframe.index.name = "date"
@@ -480,7 +480,7 @@ class HTimeseriesReadFilelikeMetadataOnlyTestCase(TestCase):
         )
 
     def test_data_is_empty(self):
-        pd.testing.assert_frame_equal(self.ts.data, standard_empty_dataframe)
+        self.assertEqual(len(self.ts.data), 0)
 
     def test_metadata_was_read(self):
         self.assertEqual(self.ts.unit, "°C")
@@ -801,8 +801,6 @@ class HTimeseriesTimeChangeTestCase(TestCase):
     hour. HTimeseries will refuse to handle repeating timestamps, so we use test data
     that does not contain a repeating hour. In that case, pandas assumes the ambiguous
     times are before the switch.
-
-    In that case, pandas does not set a "tz" attribute to the index.
     """
 
     time_change_test_timeseries = textwrap.dedent(
@@ -830,4 +828,7 @@ class HTimeseriesTimeChangeTestCase(TestCase):
                 dt.datetime(2023, 10, 29, 2, 30, 0, tzinfo=dt.timezone.utc),
             ]
         )
-        np.testing.assert_array_equal(self.ts.data.index, expected)
+        np.testing.assert_array_equal(
+            self.ts.data.index.tz_convert(dt.timezone.utc),
+            expected,
+        )

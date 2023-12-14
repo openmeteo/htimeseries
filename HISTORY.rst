@@ -2,6 +2,11 @@
 History
 =======
 
+6.0.0 (2023-12-14)
+==================
+
+- Increased CSV reading speed by two orders of magnitude
+
 5.0.0 (2023-11-21)
 ==================
 

@@ -1,11 +1,12 @@
+import csv
 import datetime as dt
 from configparser import ParsingError
-from io import SEEK_CUR, SEEK_END, SEEK_SET, StringIO, UnsupportedOperation
+from io import StringIO
 
 import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
-from textbisect import text_bisect_left, text_bisect_right
+from textbisect import text_bisect_left
 
 from .timezone_utils import TzinfoFromString
 
@@ -36,61 +37,37 @@ class _BacktrackableFile(object):
 
 
 class _FilePart(object):
-    """A wrapper that views only a subset of the wrapped filelike object.
+    """A wrapper that views only a subset of the wrapped csv filelike object.
 
-    When it is created, three mandatory parameters are passed: a filelike
-    object, startpos and endpos. This wrapper then acts as a filelike object of
-    size endpos+1-startpos, which views the part of the wrapped object between
-    startpos and endpos.
+    When it is created, three mandatory parameters are passed: a filelike object,
+    start_date and end_date, the latter as stirngs. This wrapper then acts as a filelike
+    object, which views the part of the wrapped object between start_date and end_date.
     """
 
-    def __init__(self, stream, startpos, endpos):
-        self.startpos = startpos
-        self.endpos = endpos
+    def __init__(self, stream, start_date, end_date):
         self.stream = stream
+        self.start_date = start_date
+        self.end_date = end_date
+
+        lo = stream.tell()
+        key = lambda x: x.split(",")[0]  # NOQA
+        self.startpos = text_bisect_left(stream, start_date, lo=lo, key=key)
         if self.stream.tell() < self.startpos:
             self.stream.seek(self.startpos)
-        if self.stream.tell() > self.endpos + 1:
-            self.stream.seek(0, SEEK_END)
-
-    def read(self, size=-1):
-        max_available_size = self.endpos + 1 - self.stream.tell()
-        size = min(size, max_available_size)
-        if size == -1:
-            size = max_available_size
-        return self.stream.read(size)
 
     def readline(self, size=-1):
         max_available_size = self.endpos + 1 - self.stream.tell()
         size = min(size, max_available_size)
         return self.stream.readline(size)
 
-    def seek(self, offset, whence=SEEK_SET):
-        if whence == SEEK_SET:
-            if offset < 0:
-                raise ValueError("negative seek position {}".format(offset))
-            targetpos = self.startpos + offset
-            if targetpos > self.endpos + 1:
-                targetpos = self.endpos + 1
-            self.stream.seek(targetpos)
-            # It might seem more reasonable to return targetpos -
-            # self.startpos, but we choose to do the same thing Python does in
-            # other cases; if you do f.seek(VERY_LARGE), it returns VERY_LARGE,
-            # even if it is larger than the size of the file.
-            return offset
-        elif whence == SEEK_CUR:
-            # Do nothing by simply calling the wrapped (which requires that
-            # offset be zero).
-            return self.stream.seek(offset, SEEK_CUR)
-        elif whence == SEEK_END:
-            if offset != 0:
-                return UnsupportedOperation("can't do nonzero cur-relative seeks")
-            return self.stream.seek(self.endpos)
-        else:
-            assert False
+    def __iter__(self):
+        return self
 
-    def tell(self):
-        return self.stream.tell() - self.startpos
+    def __next__(self):
+        result = self.stream.__next__()
+        if result[:16] > self.end_date:
+            raise StopIteration
+        return result
 
     def __getattr__(self, name):
         return getattr(self.stream, name)
@@ -425,7 +402,7 @@ class TimeseriesRecordsReader:
 
     def read(self):
         start_date, end_date = self._get_bounding_dates_as_strings()
-        f2 = self._get_stream_part_between_dates(start_date, end_date)
+        f2 = _FilePart(self.f, start_date, end_date)
         data = self._read_data_from_stream(f2)
         self._check_there_are_no_duplicates(data)
         return data
@@ -439,51 +416,23 @@ class TimeseriesRecordsReader:
             end_date = end_date.strftime("%Y-%m-%d %H:%M")
         return start_date, end_date
 
-    def _get_stream_part_between_dates(self, start_date, end_date):
-        lo = self.f.tell()
-        key = lambda x: x.split(",")[0]  # NOQA
-        endpos = text_bisect_right(self.f, end_date, lo=lo, key=key) - 1
-        startpos = text_bisect_left(self.f, start_date, lo=lo, key=key)
-        return _FilePart(self.f, startpos, endpos)
-
     def _read_data_from_stream(self, f):
-        try:
-            pos = f.tell()
-            return self._read_three_columns_from_stream(f)
-        except pd.errors.ParserError:
-            f.seek(pos)
-            return self._read_two_columns_from_stream(f)
-
-    def _read_two_columns_from_stream(self, f):
-        result = pd.read_csv(
-            f,
-            parse_dates=[0],
-            names=("date", "value"),
-            usecols=("date", "value"),
-            index_col=0,
-            header=None,
-            converters={
-                "date": lambda x: pd.to_datetime(x).replace(tzinfo=self.tzinfo)
+        dates, values, flags = [], [], []
+        for row in csv.reader(f):  # We don't use pd.read_csv() because it's much slower
+            if not len(row):
+                continue
+            dates.append(row[0])
+            values.append(row[1] or "NaN")
+            flags.append(row[2] if len(row) > 2 else "")
+        dates = pd.to_datetime(dates).tz_localize(self.tzinfo)
+        result = pd.DataFrame(
+            {
+                "value": np.array(values, dtype=np.float64),
+                "flags": np.array(flags, dtype=str),
             },
-            dtype={"value": np.float64},
+            index=dates,
         )
-        result["flags"] = ""
-        return result
-
-    def _read_three_columns_from_stream(self, f):
-        result = pd.read_csv(
-            f,
-            parse_dates=[0],
-            names=("date", "value", "flags"),
-            usecols=("date", "value", "flags"),
-            index_col=0,
-            header=None,
-            converters={
-                "date": lambda x: pd.to_datetime(x).replace(tzinfo=self.tzinfo),
-                "flags": lambda x: x,
-            },
-            dtype={"value": np.float64},
-        )
+        result.index.name = "date"
         return result
 
     def _check_there_are_no_duplicates(self, data):
