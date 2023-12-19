@@ -435,7 +435,10 @@ class TimeseriesRecordsReader:
             if not len(row):
                 continue
             dates.append(row[0])
-            values.append(row[1] or "NaN")
+            if len(row) > 1 and row[1]:
+                values.append(row[1])
+            else:
+                values.append("NaN")
             flags.append(row[2] if len(row) > 2 else "")
         return dates, values, flags
 
