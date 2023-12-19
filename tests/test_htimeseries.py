@@ -467,6 +467,19 @@ class HTimeseriesReadMixOf2And3ColumnsTestCase(ReadFilelikeTestCaseBase, TestCas
         return re.sub(r",$", "", s, flags=re.MULTILINE) + "\n"
 
 
+class HTimeseriesReadOneColumnTestCase(TestCase):
+    def test_one_column(self):
+        s = StringIO("2023-12-19 15:17\n")
+        s.seek(0)
+        self.ts = HTimeseries(s, default_tzinfo=ZoneInfo("Etc/GMT-2"))
+        expected = pd.DataFrame(
+            {"value": [np.nan], "flags": [""]},
+            index=[dt.datetime(2023, 12, 19, 15, 17, tzinfo=ZoneInfo("Etc/GMT-2"))],
+        )
+        expected.index.name = "date"
+        pd.testing.assert_frame_equal(self.ts.data, expected)
+
+
 class HTimeseriesReadFilelikeMetadataOnlyTestCase(TestCase):
     def setUp(self):
         s = StringIO(tenmin_test_timeseries_file_version_4)
