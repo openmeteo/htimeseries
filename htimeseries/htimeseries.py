@@ -417,13 +417,7 @@ class TimeseriesRecordsReader:
         return start_date, end_date
 
     def _read_data_from_stream(self, f):
-        dates, values, flags = [], [], []
-        for row in csv.reader(f):  # We don't use pd.read_csv() because it's much slower
-            if not len(row):
-                continue
-            dates.append(row[0])
-            values.append(row[1] or "NaN")
-            flags.append(row[2] if len(row) > 2 else "")
+        dates, values, flags = self._read_csv(f)
         dates = pd.to_datetime(dates).tz_localize(self.tzinfo)
         result = pd.DataFrame(
             {
@@ -434,6 +428,16 @@ class TimeseriesRecordsReader:
         )
         result.index.name = "date"
         return result
+
+    def _read_csv(self, f):
+        dates, values, flags = [], [], []
+        for row in csv.reader(f):  # We don't use pd.read_csv() because it's much slower
+            if not len(row):
+                continue
+            dates.append(row[0])
+            values.append(row[1] or "NaN")
+            flags.append(row[2] if len(row) > 2 else "")
+        return dates, values, flags
 
     def _check_there_are_no_duplicates(self, data):
         _check_timeseries_index_has_no_duplicates(
