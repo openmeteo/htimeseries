@@ -2,6 +2,11 @@
 History
 =======
 
+6.0.2 (2023-12-22)
+==================
+
+- Fixed crash when reading csv with aware timestamps.
+
 6.0.1 (2023-12-19)
 ==================
 

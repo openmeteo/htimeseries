@@ -418,7 +418,7 @@ class TimeseriesRecordsReader:
 
     def _read_data_from_stream(self, f):
         dates, values, flags = self._read_csv(f)
-        dates = pd.to_datetime(dates).tz_localize(self.tzinfo)
+        dates = self._localize_dates(dates)
         result = pd.DataFrame(
             {
                 "value": np.array(values, dtype=np.float64),
@@ -427,6 +427,17 @@ class TimeseriesRecordsReader:
             index=dates,
         )
         result.index.name = "date"
+        return result
+
+    def _localize_dates(self, dates):
+        result = pd.to_datetime(dates)
+        if not isinstance(result, pd.DatetimeIndex):
+            raise ValueError(
+                "Could not parse timestamps correctly. Maybe the CSV contains mixed "
+                "aware and naive timestamps."
+            )
+        if len(result) > 0 and result[0].tzinfo is None:
+            result = pd.to_datetime(dates).tz_localize(self.tzinfo)
         return result
 
     def _read_csv(self, f):
