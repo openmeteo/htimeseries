@@ -841,3 +841,28 @@ class HTimeseriesTimeChangeTestCase(TestCase):
             self.ts.data.index.tz_convert(dt.timezone.utc),
             expected,
         )
+
+
+class HTimeseriesCsvWithAwareTimestampsTestCase(TestCase):
+    """Test what happens when we read a csv with aware timestamps.
+
+    Some enhydris-api-client/loggertodb versions attempt to upload CSVs
+    with timestamps containing time zones, such as 2023-12-22
+    19:53+00:00. We check that we handle this correctly.
+    """
+
+    def test_csv_with_aware_timestamps(self):
+        s = StringIO("2023-12-22 19:53+00:00,42.0,\n")
+        s.seek(0)
+        self.ts = HTimeseries(s, default_tzinfo=ZoneInfo("Etc/GMT-2"))
+        self.assertEqual(
+            self.ts.data.index[0],
+            dt.datetime(2023, 12, 22, 19, 53, tzinfo=dt.timezone.utc),
+        )
+
+    def test_csv_with_mixed_timestamps(self):
+        s = StringIO("2023-12-22 19:53+00:00,42.0,\n2023-12-22 20:53,43.0,\n")
+        s.seek(0)
+        msg = "Maybe the CSV contains mixed aware and naive timestamps"
+        with self.assertRaisesRegex(ValueError, msg):
+            HTimeseries(s, default_tzinfo=ZoneInfo("Etc/GMT-2"))
