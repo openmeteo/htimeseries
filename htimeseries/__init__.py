@@ -1,4 +1,4 @@
 from .htimeseries import *  # NOQA
 from .timezone_utils import *  # NOQA
 
-__version__ = "6.0.2"
+__version__ = "6.0.3"
