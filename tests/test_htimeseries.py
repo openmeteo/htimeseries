@@ -220,7 +220,7 @@ tenmin_test_timeseries_file_negative_precision = textwrap.dedent(
 
 standard_empty_dataframe = pd.DataFrame(
     data={"value": np.array([], dtype=np.float64), "flags": np.array([], dtype=str)},
-    index=pd.DatetimeIndex([]),
+    index=pd.DatetimeIndex([], tz=ZoneInfo("Etc/GMT-2")),
     columns=["value", "flags"],
 )
 standard_empty_dataframe.index.name = "date"
@@ -240,17 +240,24 @@ class HTimeseriesArgumentsTestCase(TestCase):
 class HTimeseriesEmptyTestCase(TestCase):
     def test_read_empty(self):
         s = StringIO()
-        ts = HTimeseries(s)
+        ts = HTimeseries(s, default_tzinfo=ZoneInfo("Etc/GMT-2"))
         pd.testing.assert_frame_equal(ts.data, standard_empty_dataframe)
 
     def test_write_empty(self):
-        ts = HTimeseries()
+        ts = HTimeseries(default_tzinfo=ZoneInfo("Etc/GMT-2"))
         s = StringIO()
         ts.write(s)
         self.assertEqual(s.getvalue(), "")
 
     def test_create_empty(self):
-        pd.testing.assert_frame_equal(HTimeseries().data, standard_empty_dataframe)
+        pd.testing.assert_frame_equal(
+            HTimeseries(default_tzinfo=ZoneInfo("Etc/GMT-2")).data,
+            standard_empty_dataframe,
+        )
+
+    def test_unspecified_default_tzinfo(self):
+        ts = HTimeseries()
+        self.assertEqual(ts.data.index.tz, ZoneInfo("UTC"))
 
 
 class HTimeseriesWriteSimpleTestCase(TestCase):
@@ -498,7 +505,7 @@ class HTimeseriesReadFilelikeMetadataOnlyTestCase(TestCase):
 class HTimeseriesReadFilelikeWithMissingLocationButPresentAltitudeTestCase(TestCase):
     def setUp(self):
         s = StringIO("Altitude=55\n\n")
-        self.ts = HTimeseries(s)
+        self.ts = HTimeseries(s, default_tzinfo=ZoneInfo("Etc/GMT-2"))
 
     def test_data_is_empty(self):
         pd.testing.assert_frame_equal(self.ts.data, standard_empty_dataframe)

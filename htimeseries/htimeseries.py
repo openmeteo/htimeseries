@@ -2,6 +2,7 @@ import csv
 import datetime as dt
 from configparser import ParsingError
 from io import StringIO
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -325,6 +326,8 @@ class HTimeseries:
         for arg, default_value in self.args.items():
             kwargs.setdefault(arg, default_value)
         if data is None:
+            if not kwargs["default_tzinfo"]:
+                kwargs["default_tzinfo"] = ZoneInfo("UTC")
             self._read_filelike(StringIO(), **kwargs)
         elif isinstance(data, pd.DataFrame):
             self.data = data
@@ -436,7 +439,7 @@ class TimeseriesRecordsReader:
                 "Could not parse timestamps correctly. Maybe the CSV contains mixed "
                 "aware and naive timestamps."
             )
-        if len(result) > 0 and result[0].tzinfo is None:
+        if len(result) == 0 or (len(result) > 0 and result[0].tzinfo is None):
             result = pd.to_datetime(dates).tz_localize(self.tzinfo)
         return result
 

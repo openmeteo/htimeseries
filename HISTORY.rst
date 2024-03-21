@@ -2,6 +2,13 @@
 History
 =======
 
+6.0.3 (2024-03-21)
+==================
+
+- Fixed error with unspecified time zone in HTimeseries objects created empty.
+  Now creating an empty object with ``HTimeseries()`` assumes
+  ``default_tzinfo=ZoneInfo("UTC")``.
+
 6.0.2 (2023-12-22)
 ==================
 
