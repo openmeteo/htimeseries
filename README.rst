@@ -87,7 +87,9 @@ and contain the ``timezone`` header, that time zone is used to interpret
 the file's timestamps. If it is called with a filelike object that does
 not contain a ``timezone`` header, ``default_tzinfo`` is used. In the
 latter case, if ``default_tzinfo`` is ``None`` or unspecified, an
-exception is raised.
+exception is raised. Creating an empty ``HTimeseries`` object without
+specifying ``default_tzinfo`` (e.g. with ``HTimeseries()``) assumes
+``default_tzinfo=ZoneInfo("UTC")``.
 
 **.write(f, format=HTimeseries.TEXT, version=None)**
 
