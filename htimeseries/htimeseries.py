@@ -2,7 +2,6 @@ import csv
 import datetime as dt
 from configparser import ParsingError
 from io import StringIO
-from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -327,7 +326,7 @@ class HTimeseries:
             kwargs.setdefault(arg, default_value)
         if data is None:
             if not kwargs["default_tzinfo"]:
-                kwargs["default_tzinfo"] = ZoneInfo("UTC")
+                kwargs["default_tzinfo"] = dt.timezone.utc
             self._read_filelike(StringIO(), **kwargs)
         elif isinstance(data, pd.DataFrame):
             self.data = data
