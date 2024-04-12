@@ -2,6 +2,15 @@
 History
 =======
 
+7.0.0 (2024-04-14)
+==================
+
+- When saving in file format, the Timezone= parameter now merely
+  contains +HHmm.
+- The HTimeseries.timezone attribute has been abolished; use
+  HTimeseries.data.index.tz instead.
+- When initialized with a dataframe, it checks that the index is aware.
+
 6.0.3 (2024-03-21)
 ==================
 

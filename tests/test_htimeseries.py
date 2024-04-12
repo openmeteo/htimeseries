@@ -34,7 +34,7 @@ tenmin_test_timeseries_file_version_2 = textwrap.dedent(
     Comment=spans five lines.\r
     Comment=\r
     Comment=These five lines form two paragraphs.\r
-    Timezone=EET (UTC+0200)\r
+    Timezone=+0200\r
     Time_step=10,0\r
     Variable=temperature\r
     Precision=1\r
@@ -57,7 +57,7 @@ tenmin_test_timeseries_file_version_3 = textwrap.dedent(
     Comment=spans five lines.\r
     Comment=\r
     Comment=These five lines form two paragraphs.\r
-    Timezone=EET (UTC+0200)\r
+    Timezone=+0200\r
     Time_step=10,0\r
     Variable=temperature\r
     Precision=1\r
@@ -82,7 +82,7 @@ tenmin_test_timeseries_file_version_4 = textwrap.dedent(
     Comment=spans five lines.\r
     Comment=\r
     Comment=These five lines form two paragraphs.\r
-    Timezone=EET (UTC+0200)\r
+    Timezone=+0200\r
     Time_step=10,0\r
     Variable=temperature\r
     Precision=1\r
@@ -107,7 +107,7 @@ tenmin_test_timeseries_file_no_altitude = textwrap.dedent(
     Comment=spans five lines.\r
     Comment=\r
     Comment=These five lines form two paragraphs.\r
-    Timezone=EET (UTC+0200)\r
+    Timezone=+0200\r
     Time_step=10,0\r
     Variable=temperature\r
     Precision=1\r
@@ -131,7 +131,7 @@ tenmin_test_timeseries_file_no_location = textwrap.dedent(
     Comment=spans five lines.\r
     Comment=\r
     Comment=These five lines form two paragraphs.\r
-    Timezone=EET (UTC+0200)\r
+    Timezone=+0200\r
     Time_step=10,0\r
     Variable=temperature\r
     Precision=1\r
@@ -154,7 +154,7 @@ tenmin_test_timeseries_file_no_precision = textwrap.dedent(
     Comment=spans five lines.\r
     Comment=\r
     Comment=These five lines form two paragraphs.\r
-    Timezone=EET (UTC+0200)\r
+    Timezone=+0200\r
     Time_step=10,0\r
     Variable=temperature\r
     Location=24.678900 38.123450 4326\r
@@ -178,7 +178,7 @@ tenmin_test_timeseries_file_zero_precision = textwrap.dedent(
     Comment=spans five lines.\r
     Comment=\r
     Comment=These five lines form two paragraphs.\r
-    Timezone=EET (UTC+0200)\r
+    Timezone=+0200\r
     Time_step=10,0\r
     Variable=temperature\r
     Precision=0\r
@@ -204,7 +204,7 @@ tenmin_test_timeseries_file_negative_precision = textwrap.dedent(
     Comment=spans five lines.\r
     Comment=\r
     Comment=These five lines form two paragraphs.\r
-    Timezone=EET (UTC+0200)\r
+    Timezone=+0200\r
     Time_step=10,0\r
     Variable=temperature\r
     Precision=-1\r
@@ -307,13 +307,12 @@ class HTimeseriesWriteFileTestCase(TestCase):
             names=("date", "value", "flags"),
             dtype={"value": np.float64, "flags": str},
         ).asfreq("10T")
-        data.index = data.index.tz_localize(dt.timezone.utc)
+        data.index = data.index.tz_localize(dt.timezone(dt.timedelta(hours=2)))
         self.reference_ts = HTimeseries(data=data)
         self.reference_ts.unit = "°C"
         self.reference_ts.title = "A test 10-min time series"
         self.reference_ts.precision = 1
         self.reference_ts.time_step = "10min"
-        self.reference_ts.timezone = "EET (UTC+0200)"
         self.reference_ts.variable = "temperature"
         self.reference_ts.comment = (
             "This timeseries is extremely important\n"
@@ -421,6 +420,26 @@ class HTimeseriesWriteFileTestCase(TestCase):
         self.assertEqual(
             outstring.getvalue(), tenmin_test_timeseries_file_negative_precision
         )
+
+    def test_timezone_utc(self):
+        self.reference_ts.data = self.reference_ts.data.tz_convert(dt.timezone.utc)
+        outstring = StringIO()
+        self.reference_ts.write(outstring, format=HTimeseries.FILE, version=4)
+        self.assertIn("Timezone=+0000\r\n", outstring.getvalue())
+
+    def test_timezone_positive(self):
+        tz = dt.timezone(dt.timedelta(hours=2, minutes=30))
+        self.reference_ts.data = self.reference_ts.data.tz_convert(tz)
+        outstring = StringIO()
+        self.reference_ts.write(outstring, format=HTimeseries.FILE, version=4)
+        self.assertIn("Timezone=+0230\r\n", outstring.getvalue())
+
+    def test_timezone_negative(self):
+        tz = dt.timezone(-dt.timedelta(hours=3, minutes=15))
+        self.reference_ts.data = self.reference_ts.data.tz_convert(tz)
+        outstring = StringIO()
+        self.reference_ts.write(outstring, format=HTimeseries.FILE, version=4)
+        self.assertIn("Timezone=-0315\r\n", outstring.getvalue())
 
 
 class ReadFilelikeTestCaseBase:
@@ -648,7 +667,7 @@ class HTimeseriesReadFileFormatTestCase(TestCase):
         )
 
     def test_timezone(self):
-        self.assertEqual(self.ts.timezone, "EET (UTC+0200)")
+        self.assertEqual(self.ts.data.index.tz.utcoffset(None), dt.timedelta(hours=2))
 
     def test_time_step(self):
         self.assertEqual(self.ts.time_step, "10min")

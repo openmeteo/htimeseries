@@ -56,12 +56,12 @@ from it.  There must be no newline translation in ``data`` (open it with
 ``open(..., newline='\n')``. If ``start_date`` and ``end_date`` are
 specified, it skips rows outside the range.
 
-The contents of the filelike object can be in text format or file format (see
-"formats" below). This is usually auto-detected, but a specific format can
-be specified with the ``format`` parameter.  If reading in text format,
-the returned object just has the ``data`` attribute set. If reading in
-file format , the returned object also has attributes ``unit``,
-``title``, ``comment``, ``timezone``, ``time_step``, ``interval_type``,
+The contents of the filelike object can be in text format or file format
+(see "formats" below). This is usually auto-detected, but a specific
+format can be specified with the ``format`` parameter.  If reading in
+text format, the returned object just has the ``data`` attribute set. If
+reading in file format , the returned object also has attributes
+``unit``, ``title``, ``comment``, ``time_step``, ``interval_type``,
 ``variable``, ``precision`` and ``location``. For the meaning of these
 attributes, see section "File format" below.
 
@@ -250,10 +250,13 @@ The parameters available are:
     example above.
 
 **Timezone**
-    The time zone of the timestamps, in the format ``{XXX}
-    (UTC{+HHmm})``, where *XXX* is a time zone name and *+HHmm* is the
-    offset from UTC. Examples are ``EET (UTC+0200)`` and ``VST
-    (UTC-0430)``.
+    The time zone of the timestamps, in the format ``{+HHmm}``, where
+    *+HHmm* is the offset from UTC. Examples are ``+0200`` and
+    ``-0430``.
+
+    Format ``{XXX} (UTC{+HHmm})``, where *XXX* is a time zone name, is
+    also supported but deprecated. It exists only in order to be able to
+    read old files.
 
     The ``TzinfoFromString`` utility (described above) can be used to
     convert this string to a tzinfo_ object.

@@ -86,7 +86,7 @@ class MetadataWriter:
         self.write_count()
         self.write_simple("title")
         self.write_comment()
-        self.write_simple("timezone")
+        self.write_timezone()
         self.write_time_step()
         self.write_simple("interval_type")
         self.write_simple("variable")
@@ -106,6 +106,14 @@ class MetadataWriter:
         if hasattr(self.htimeseries, "comment"):
             for line in self.htimeseries.comment.splitlines():
                 self.f.write("Comment={}\r\n".format(line))
+
+    def write_timezone(self):
+        offset = self.htimeseries.data.index.tz.utcoffset(None)
+        sign = "-+"[offset >= dt.timedelta(0)]
+        offset = abs(offset)
+        hours = offset.seconds // 3600
+        minutes = offset.seconds % 3600 // 60
+        self.f.write(f"Timezone={sign}{hours:02}{minutes:02}\r\n")
 
     def write_location(self):
         if self.version <= 2 or not getattr(self.htimeseries, "location", None):
@@ -216,7 +224,6 @@ class MetadataReader:
         self.meta[name] = value
 
     get_title = get_unit
-    get_timezone = get_unit
     get_variable = get_unit
 
     def get_time_step(self, name, value):
@@ -225,6 +232,9 @@ class MetadataReader:
             self.meta[name] = self._time_step_from_minutes_months(minutes, months)
         else:
             self.meta[name] = value
+
+    def get_timezone(self, name, value):
+        self.meta["_timezone"] = value
 
     def _time_step_from_minutes_months(self, minutes, months):
         if minutes != 0 and months != 0:
@@ -342,7 +352,7 @@ class HTimeseries:
         reader = TimeseriesStreamReader(*args, **kwargs)
         self.__dict__.update(reader.get_metadata())
         try:
-            tzinfo = TzinfoFromString(self.timezone)
+            tzinfo = TzinfoFromString(self._timezone)
         except AttributeError:
             tzinfo = kwargs["default_tzinfo"]
         self.data = reader.get_data(tzinfo)
