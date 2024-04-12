@@ -2,6 +2,7 @@ import datetime as dt
 import re
 import textwrap
 from configparser import ParsingError
+from copy import copy
 from io import StringIO
 from unittest import TestCase
 from zoneinfo import ZoneInfo
@@ -236,6 +237,12 @@ class HTimeseriesArgumentsTestCase(TestCase):
         with self.assertRaises(TypeError):
             HTimeseries(StringIO(tenmin_test_timeseries))
 
+    def test_raises_if_dataframe_naive(self):
+        df = copy(standard_empty_dataframe)
+        df.index = pd.DatetimeIndex([])  # Replace with a naive index
+        with self.assertRaises(TypeError):
+            HTimeseries(df)
+
 
 class HTimeseriesEmptyTestCase(TestCase):
     def test_read_empty(self):
@@ -300,6 +307,7 @@ class HTimeseriesWriteFileTestCase(TestCase):
             names=("date", "value", "flags"),
             dtype={"value": np.float64, "flags": str},
         ).asfreq("10T")
+        data.index = data.index.tz_localize(dt.timezone.utc)
         self.reference_ts = HTimeseries(data=data)
         self.reference_ts.unit = "°C"
         self.reference_ts.title = "A test 10-min time series"
@@ -802,9 +810,10 @@ class HTimeseriesReadWithDuplicateDatesTestCase(TestCase):
             names=("date", "value", "flags"),
             dtype={"value": np.float64, "flags": str},
         )
+        data.index = data.index.tz_localize(dt.timezone.utc)
         msg = (
             "Can't write time series: the following timestamps appear more than once: "
-            "2020-02-23 12:00:00, 2020-02-23 13:00:00"
+            r"2020-02-23 12:00:00\+00:00, 2020-02-23 13:00:00\+00:00"
         )
         with self.assertRaisesRegex(ValueError, msg):
             HTimeseries(data).write(StringIO())

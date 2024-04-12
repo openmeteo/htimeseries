@@ -329,9 +329,14 @@ class HTimeseries:
                 kwargs["default_tzinfo"] = dt.timezone.utc
             self._read_filelike(StringIO(), **kwargs)
         elif isinstance(data, pd.DataFrame):
+            self._check_dataframe(data)
             self.data = data
         else:
             self._read_filelike(data, **kwargs)
+
+    def _check_dataframe(self, data):
+        if data.index.tz is None:
+            raise TypeError("data.index.tz must exist")
 
     def _read_filelike(self, *args, **kwargs):
         reader = TimeseriesStreamReader(*args, **kwargs)
