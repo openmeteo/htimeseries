@@ -14,8 +14,8 @@ History
 6.0.3 (2024-03-21)
 ==================
 
-- Fixed error with unspecified time zone in HTimeseries objects created empty.
-  Now creating an empty object with ``HTimeseries()`` assumes
+- Fixed error with unspecified time zone in HTimeseries objects created
+  empty.  Now creating an empty object with ``HTimeseries()`` assumes
   ``default_tzinfo=ZoneInfo("UTC")``.
 
 6.0.2 (2023-12-22)
@@ -31,11 +31,12 @@ History
 6.0.0 (2023-12-14)
 ==================
 
-- Python 3.9 is now required (the reason for this is that backports.zoneinfo is
-  behaving differently from zoneinfo).
-- Only pandas>=1.5,<2  is now supported. Pandas<1.5 probably did not work in
-  5.0.0 either, but it had not been discovered. Pandas>=2 handles ambiguous
-  times differently and is therefore still unsupported.
+- Python 3.9 is now required (the reason for this is that
+  backports.zoneinfo is behaving differently from zoneinfo).
+- Only pandas>=1.5,<2  is now supported. Pandas<1.5 probably did not
+  work in 5.0.0 either, but it had not been discovered. Pandas>=2
+  handles ambiguous times differently and is therefore still
+  unsupported.
 - Increased CSV reading speed by two orders of magnitude.
 
 5.0.0 (2023-11-21)
