@@ -35,7 +35,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install codecov coverage isort flake8 'black<24' twine setuptools
+        pip install codecov coverage isort flake8 'black<24' twine setuptools build
         pip install -e .
 
     - name: Run Tests
@@ -43,7 +43,7 @@ jobs:
         black --check .
         flake8 --max-line-length=88 .
         isort --check-only --diff *.py htimeseries tests
-        ./setup.py sdist bdist_wheel
+        python3 -m build
         twine check dist/*
         coverage run --include="./*" --omit="docs/","*/tests/*","*/tests.py","setup.py" python3 -m unittest -v
 
