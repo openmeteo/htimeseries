@@ -45,7 +45,7 @@ jobs:
         isort --check-only --diff *.py htimeseries tests
         python3 -m build
         twine check dist/*
-        coverage run --include="./*" --omit="docs/","*/tests/*","*/tests.py","setup.py" python3 -m unittest -v
+        coverage run --include="./*" --omit="docs/","*/tests/*","*/tests.py","setup.py" -m unittest -v
 
     - name: Upload coverage to Codecov
       if: matrix.include-codecov == true
