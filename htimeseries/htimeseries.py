@@ -172,15 +172,22 @@ class MetadataWriter:
     def _get_old_time_step_in_months(self):
         time_step = self.htimeseries.time_step
         try:
-            unit = time_step[-1]
-            value = time_step[:-1] if (len(time_step) > 1) else 1
-            if unit == "M":
+            value, unit = self._split_time_step_string(time_step)
+            value = value or 1
+            if unit in ("M", "ME"):
                 return "0," + str(int(value))
-            elif unit in ("A", "Y"):
+            elif unit in ("A", "Y", "YE"):
                 return "0," + str(12 * int(value))
         except (IndexError, ValueError):
             pass
         raise ValueError('Cannot format time step "{}"'.format(time_step))
+
+    def _split_time_step_string(self, time_step_string):
+        value = ""
+        for i, char in enumerate(time_step_string):
+            if not char.isdigit():
+                return value, time_step_string[i:]
+            value += char
 
 
 class MetadataReader:
@@ -447,14 +454,17 @@ class TimeseriesRecordsReader:
         return result
 
     def _localize_dates(self, dates):
-        result = pd.to_datetime(dates)
-        if not isinstance(result, pd.DatetimeIndex):
+        try:
+            result = pd.to_datetime(dates)
+        except ValueError:
             raise ValueError(
                 "Could not parse timestamps correctly. Maybe the CSV contains mixed "
                 "aware and naive timestamps."
             )
         if len(result) == 0 or (len(result) > 0 and result[0].tzinfo is None):
-            result = pd.to_datetime(dates).tz_localize(self.tzinfo)
+            result = pd.to_datetime(dates).tz_localize(
+                self.tzinfo, ambiguous=len(dates) * [True]
+            )
         return result
 
     def _read_csv(self, f):

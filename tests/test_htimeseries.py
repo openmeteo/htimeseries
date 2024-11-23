@@ -306,7 +306,7 @@ class HTimeseriesWriteFileTestCase(TestCase):
             header=None,
             names=("date", "value", "flags"),
             dtype={"value": np.float64, "flags": str},
-        ).asfreq("10T")
+        ).asfreq("10min")
         data.index = data.index.tz_localize(dt.timezone(dt.timedelta(hours=2)))
         self.reference_ts = HTimeseries(data=data)
         self.reference_ts.unit = "°C"
@@ -449,7 +449,7 @@ class ReadFilelikeTestCaseBase:
     def test_dates(self):
         np.testing.assert_array_equal(
             self.ts.data.index,
-            pd.date_range("2008-02-07 11:20+0200", periods=5, freq="10T"),
+            pd.date_range("2008-02-07 11:20+0200", periods=5, freq="10min"),
         )
 
     def test_values(self):
@@ -562,7 +562,7 @@ class HTimeseriesReadWithStartDateAndEndDateTestCase(TestCase):
         np.testing.assert_array_equal(
             self.ts.data.index,
             pd.date_range(
-                "2008-02-07 11:30", periods=3, freq="10T", tz=dt.timezone.utc
+                "2008-02-07 11:30", periods=3, freq="10min", tz=dt.timezone.utc
             ),
         )
 
@@ -595,7 +595,7 @@ class HTimeseriesReadWithStartDateTestCase(TestCase):
         np.testing.assert_array_equal(
             self.ts.data.index,
             pd.date_range(
-                "2008-02-07 11:50", periods=2, freq="10T", tz=dt.timezone.utc
+                "2008-02-07 11:50", periods=2, freq="10min", tz=dt.timezone.utc
             ),
         )
 
@@ -625,7 +625,7 @@ class HTimeseriesReadWithEndDateTestCase(TestCase):
         np.testing.assert_array_equal(
             self.ts.data.index,
             pd.date_range(
-                "2008-02-07 11:20", periods=4, freq="10T", tz=dt.timezone.utc
+                "2008-02-07 11:20", periods=4, freq="10min", tz=dt.timezone.utc
             ),
         )
 
@@ -700,7 +700,7 @@ class HTimeseriesReadFileFormatTestCase(TestCase):
         np.testing.assert_array_equal(
             self.ts.data.index,
             pd.date_range(
-                "2008-02-07 11:20", periods=5, freq="10T", tz=ZoneInfo("Etc/GMT-2")
+                "2008-02-07 11:20", periods=5, freq="10min", tz=ZoneInfo("Etc/GMT-2")
             ),
         )
 
@@ -746,10 +746,10 @@ class WriteOldTimeStepTestCase(TestCase):
         self.assertEqual(self.get_value("min"), "Time_step=1,0\r\n")
 
     def test_hour(self):
-        self.assertEqual(self.get_value("3H"), "Time_step=180,0\r\n")
+        self.assertEqual(self.get_value("3h"), "Time_step=180,0\r\n")
 
     def test_hour_without_number(self):
-        self.assertEqual(self.get_value("H"), "Time_step=60,0\r\n")
+        self.assertEqual(self.get_value("h"), "Time_step=60,0\r\n")
 
     def test_day(self):
         self.assertEqual(self.get_value("3D"), "Time_step=4320,0\r\n")
@@ -758,16 +758,16 @@ class WriteOldTimeStepTestCase(TestCase):
         self.assertEqual(self.get_value("D"), "Time_step=1440,0\r\n")
 
     def test_month(self):
-        self.assertEqual(self.get_value("3M"), "Time_step=0,3\r\n")
+        self.assertEqual(self.get_value("3ME"), "Time_step=0,3\r\n")
 
     def test_month_without_number(self):
-        self.assertEqual(self.get_value("M"), "Time_step=0,1\r\n")
+        self.assertEqual(self.get_value("ME"), "Time_step=0,1\r\n")
 
     def test_year(self):
-        self.assertEqual(self.get_value("3Y"), "Time_step=0,36\r\n")
+        self.assertEqual(self.get_value("3YE"), "Time_step=0,36\r\n")
 
     def test_year_without_number(self):
-        self.assertEqual(self.get_value("Y"), "Time_step=0,12\r\n")
+        self.assertEqual(self.get_value("YE"), "Time_step=0,12\r\n")
 
     def test_garbage(self):
         with self.assertRaisesRegex(ValueError, 'Cannot format time step "hello"'):
@@ -843,8 +843,8 @@ class HTimeseriesTimeChangeTestCase(TestCase):
 
     We use a hard case here, a switch from DST to normal, which contains a duplicate
     hour. HTimeseries will refuse to handle repeating timestamps, so we use test data
-    that does not contain a repeating hour. In that case, pandas assumes the ambiguous
-    times are before the switch.
+    that does not contain a repeating hour. In that case, HTimeseries assumes the
+    ambiguous times are before the switch.
     """
 
     time_change_test_timeseries = textwrap.dedent(

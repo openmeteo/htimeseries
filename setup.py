@@ -12,7 +12,7 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "pandas>=1.5,<2",
+    "pandas>=2.2,<3",
     "iso8601",
     "textbisect",
     "tzdata",
