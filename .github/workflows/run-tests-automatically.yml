@@ -1,0 +1,51 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+      - pandas2
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - python-version: "3.10"
+            include-codecov: false
+          - python-version: "3.11"
+            include-codecov: false
+          - python-version: "3.12"
+            include-codecov: false
+          - python-version: "3.13"
+            include-codecov: true
+
+    steps:
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Dependencies
+      run: |
+        pip install codecov coverage isort flake8 'black<24' twine
+        pip install -e .
+
+    - name: Run Tests
+      run: |
+        black --check .
+        flake8 --max-line-length=88 .
+        isort --recursive --check-only --diff *.py htimeseries tests
+        ./setup.py sdist bdist_wheel
+        twine check dist/*
+        coverage run --include="./*" --omit="docs/","*/tests/*","*/tests.py","setup.py" python -m unittest -v
+
+    - name: Upload coverage to Codecov
+      if: matrix.include-codecov == true
+      run: |
+        codecov
