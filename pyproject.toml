@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm>=7.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dynamic = ["version"]
+name = "htimeseries"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.2,<3",
+    "iso8601",
+    "textbisect",
+    "tzdata",
+]
+authors = [
+    {name = "Antonis Christofides", email = "antonis@antonischristofides.com"},
+]
+maintainers = [
+    {name = "Antonis Christofides", email = "antonis@antonischristofides.com"},
+]
+description = "Hydrological and meteorological time series"
+readme = "README.rst"
+keywords = ["time series"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/openmeteo/htimeseries"
+Documentation = "https://github.com/openmeteo/htimeseries"
+Repository = "https://github.com/openmeteo/htimeseries"
+Issues = "https://github.com/openmeteo/htimeseries/issues"
+Changelog = "https://github.com/openmeteo/htimeseries/blob/master/HISTORY.rst"
+
+[tool.flake8]
+exclude = ["docs"]
+max-line-length = 88
+
+[tool.setuptools_scm]
